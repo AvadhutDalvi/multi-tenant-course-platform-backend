@@ -1,48 +1,62 @@
-const mongoose=require("mongoose")
+const mongoose = require("mongoose");
 
-const schema=mongoose.Schema;
-const ObjectId=mongoose.Types.ObjectId;
+const Schema = mongoose.Schema;
 
-
-const userschema=new schema({
-    email: {type: String, unique:true},
-    password: String,
-    firstname: String,
-    lastname: String
+const userschema = new Schema({
+    email: { type: String, unique: true, required: true },
+    password: { type: String, required: true },
+    firstname: { type: String, required: true },
+    lastname: { type: String, required: true },
+    role: {
+        type: String,
+        enum: ["student", "educator", "admin"],
+        default: "student"
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
 });
 
-const adminschema=new schema({
-    email: {type: String, unique:true},
-    password: String,
-    firstname: String,
-    lastname: String
-});
-
-const courseschema=new schema({
-    title: String,
+const courseschema = new Schema({
+    title: { type: String, required: true },
     description: String,
-    price: String,
+    price: { type: Number, required: true },
     imageURL: String,
-    creatorId: ObjectId
+    educator: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
 });
 
-const purchaseschema=new schema({
-    
-    userId: ObjectId,
-    courseId: ObjectId
+const purchaseschema = new Schema({
+    student: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+        required: true
+    },
+    course: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "courses",
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
 });
 
+const usermodel = mongoose.model("users", userschema);
+const coursemodel = mongoose.model("courses", courseschema);
+const purchasemodel = mongoose.model("purchases", purchaseschema);
 
-const usermodel=mongoose.model("users",userschema);
-const adminmodel=mongoose.model("admins",adminschema);
-const coursemodel=mongoose.model("courses",courseschema);
-const purchasemodel=mongoose.model("purchases",purchaseschema);
-
-module.exports={
+module.exports = {
     usermodel,
-    adminmodel,
     coursemodel,
     purchasemodel
-}
-
-
+};
