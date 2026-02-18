@@ -2,6 +2,30 @@ const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
+const progressSchema = new Schema({
+    student: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+        required: true
+    },
+    course: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "courses",
+        required: true
+    },
+    completedLectures: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "lectures"
+        }
+    ],
+    percentage: {
+        type: Number,
+        default: 0
+    }
+});
+
+
 const userschema = new Schema({
     email: { type: String, unique: true, required: true },
     password: { type: String, required: true },
@@ -51,6 +75,22 @@ const purchaseschema = new Schema({
     }
 });
 
+const lectureschema = new Schema({
+    title: { type: String, required: true },
+    videoUrl: { type: String, required: true },
+    course: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "courses",
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+const progressmodel = mongoose.model("progress", progressSchema);
+const lecturemodel = mongoose.model("lectures", lectureschema);
 const usermodel = mongoose.model("users", userschema);
 const coursemodel = mongoose.model("courses", courseschema);
 const purchasemodel = mongoose.model("purchases", purchaseschema);
@@ -58,5 +98,7 @@ const purchasemodel = mongoose.model("purchases", purchaseschema);
 module.exports = {
     usermodel,
     coursemodel,
-    purchasemodel
+    purchasemodel,
+    lecturemodel,
+    progressmodel
 };
