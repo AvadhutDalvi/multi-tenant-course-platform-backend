@@ -2,7 +2,18 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../services/api";
 
-const ManageCourse = () => {
+const SPACING = "space-y-6";
+
+function SkeletonLine({ className = "" }) {
+  return (
+    <div
+      className={`h-4 bg-gray-200 rounded animate-pulse ${className}`}
+      aria-hidden
+    />
+  );
+}
+
+function ManageCourse() {
   const { courseId } = useParams();
 
   const [course, setCourse] = useState(null);
@@ -13,6 +24,14 @@ const ManageCourse = () => {
 
   const [title, setTitle] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+
+  const [editingLectureId, setEditingLectureId] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editVideoUrl, setEditVideoUrl] = useState("");
+  const [savingLectureId, setSavingLectureId] = useState(null);
+
+  const [deleteConfirmLecture, setDeleteConfirmLecture] = useState(null);
+  const [deletingLectureId, setDeletingLectureId] = useState(null);
 
   useEffect(() => {
     fetchCourse();
@@ -49,6 +68,7 @@ const ManageCourse = () => {
       setLectures(res.data.lectures ?? []);
       setTitle("");
       setVideoUrl("");
+      await fetchCourse();
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Failed to add lecture.");
@@ -57,97 +77,253 @@ const ManageCourse = () => {
     }
   };
 
+  const startEdit = (lec) => {
+    setEditingLectureId(lec._id);
+    setEditTitle(lec.title);
+    setEditVideoUrl(lec.videoUrl || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingLectureId(null);
+    setEditTitle("");
+    setEditVideoUrl("");
+  };
+
+  const handleUpdateLecture = async (e) => {
+    e.preventDefault();
+    if (!editingLectureId) return;
+    const t = editTitle.trim();
+    const v = editVideoUrl.trim();
+    if (!t) return;
+
+    try {
+      setSavingLectureId(editingLectureId);
+      setError(null);
+      const res = await api.put(
+        `/course/${courseId}/lecture/${editingLectureId}`,
+        { title: t, videoUrl: v }
+      );
+      setLectures(res.data.lectures ?? []);
+      setEditingLectureId(null);
+      setEditTitle("");
+      setEditVideoUrl("");
+      await fetchCourse();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to update lecture.");
+    } finally {
+      setSavingLectureId(null);
+    }
+  };
+
+  const confirmDelete = (lec) => setDeleteConfirmLecture(lec);
+  const cancelDelete = () => {
+    setDeleteConfirmLecture(null);
+    setDeletingLectureId(null);
+  };
+
+  const handleDeleteLecture = async () => {
+    if (!deleteConfirmLecture) return;
+    const { _id } = deleteConfirmLecture;
+
+    try {
+      setDeletingLectureId(_id);
+      setError(null);
+      const res = await api.delete(`/course/${courseId}/lecture/${_id}`);
+      setLectures(res.data.lectures ?? []);
+      setDeleteConfirmLecture(null);
+      await fetchCourse();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to delete lecture.");
+    } finally {
+      setDeletingLectureId(null);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[280px]">
-        <p className="text-gray-500">Loading...</p>
+      <div className={`max-w-3xl ${SPACING}`}>
+        <div className="h-8 w-48 bg-gray-200 rounded-lg animate-pulse" />
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-3">
+          <SkeletonLine className="w-3/4" />
+          <SkeletonLine className="w-full" />
+          <SkeletonLine className="w-1/4" />
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+          <SkeletonLine className="w-24 h-5" />
+          <SkeletonLine className="w-full" />
+          <SkeletonLine className="w-full" />
+          <SkeletonLine className="w-full" />
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+          <SkeletonLine className="w-32 h-5" />
+          <SkeletonLine className="w-full h-10" />
+          <SkeletonLine className="w-full h-10" />
+          <SkeletonLine className="w-28 h-10" />
+        </div>
       </div>
     );
   }
 
   if (error && !course) {
     return (
-      <div className="text-gray-600">
-        <p>{error}</p>
+      <div className="max-w-3xl">
+        <p className="text-gray-600">{error}</p>
       </div>
     );
   }
 
   if (!course) {
     return (
-      <div className="text-gray-600">Course not found.</div>
+      <div className="max-w-3xl text-gray-600">Course not found.</div>
     );
   }
 
   return (
-    <div className="max-w-3xl">
-      <h1 className="text-3xl font-bold mb-8">Manage Course</h1>
+    <div className={`max-w-3xl ${SPACING}`}>
+      <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
+        Manage Course
+      </h1>
 
-      {/* Course overview — contextual, not interactive */}
+      {error && (
+        <div
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
+          {error}
+        </div>
+      )}
+
+      {/* Course overview */}
       <section
-        className="bg-white border border-gray-200 rounded-xl p-6 mb-8"
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
         aria-label="Course overview"
       >
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+        <h2 className="text-lg font-medium text-gray-900 mb-1">
           {course.title}
         </h2>
         {course.description && (
-          <p className="text-gray-600 mb-3">{course.description}</p>
+          <p className="text-gray-500 text-sm mb-2">{course.description}</p>
         )}
-        <p className="text-gray-500 text-sm">
+        <p className="text-gray-400 text-sm">
           Price: {course.price != null ? `₹${course.price}` : "—"}
         </p>
       </section>
 
-      {/* Lecture list — core functional area */}
+      {/* Lecture list */}
       <section
-        className="bg-white border border-gray-200 rounded-xl p-6 mb-8"
+        className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
         aria-label="Lectures"
       >
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Lectures</h2>
-        {lectures.length === 0 ? (
-          <p className="text-gray-500 py-2">No lectures added yet.</p>
-        ) : (
-          <ol className="space-y-3 list-none pl-0">
-            {lectures.map((lec, index) => (
-              <li
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h2 className="text-lg font-medium text-gray-900">Lectures</h2>
+        </div>
+        <div className="divide-y divide-gray-100">
+          {lectures.length === 0 ? (
+            <div className="px-6 py-8 text-center text-gray-500 text-sm">
+              No lectures added yet.
+            </div>
+          ) : (
+            lectures.map((lec, index) => (
+              <div
                 key={lec._id}
-                className="flex gap-3 py-2 border-b border-gray-100 last:border-0"
+                className="px-6 py-3 flex items-center gap-4 hover:bg-gray-50/80 transition-colors group"
               >
-                <span className="text-gray-500 font-medium shrink-0 w-6">
-                  {index + 1}.
-                </span>
-                <div className="min-w-0">
-                  <span className="font-medium text-gray-900">{lec.title}</span>
-                  {lec.videoUrl && (
-                    <a
-                      href={lec.videoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block text-sm text-gray-500 hover:text-gray-700 truncate mt-0.5"
-                    >
-                      {lec.videoUrl}
-                    </a>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ol>
-        )}
+                {editingLectureId === lec._id ? (
+                  <form
+                    onSubmit={handleUpdateLecture}
+                    className="flex-1 flex flex-wrap items-end gap-3 py-2"
+                  >
+                    <div className="flex-1 min-w-[200px]">
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        placeholder="Lecture title"
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-300"
+                        required
+                      />
+                    </div>
+                    <div className="flex-1 min-w-[200px]">
+                      <input
+                        type="url"
+                        value={editVideoUrl}
+                        onChange={(e) => setEditVideoUrl(e.target.value)}
+                        placeholder="Video URL"
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-300"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        disabled={savingLectureId === lec._id}
+                        className="px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:pointer-events-none"
+                      >
+                        {savingLectureId === lec._id ? "Saving…" : "Save"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <span className="w-6 shrink-0 text-sm text-gray-400 font-medium tabular-nums">
+                      {index + 1}.
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">
+                        {lec.title}
+                      </p>
+                      {lec.videoUrl && (
+                        <a
+                          href={lec.videoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-xs text-gray-500 hover:text-gray-700 truncate mt-0.5"
+                        >
+                          {lec.videoUrl}
+                        </a>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => startEdit(lec)}
+                        className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => confirmDelete(lec)}
+                        className="px-3 py-1.5 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </section>
 
-      {/* Add lecture — action area */}
+      {/* Add lecture */}
       <section
-        className="bg-white border border-gray-200 rounded-xl p-6"
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
         aria-label="Add lecture"
       >
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <h2 className="text-lg font-medium text-gray-900 mb-4">
           Add new lecture
         </h2>
-        {error && (
-          <p className="text-sm text-red-600 mb-4">{error}</p>
-        )}
-        <form onSubmit={handleAddLecture} className="space-y-4">
+        <form onSubmit={handleAddLecture} className="space-y-4 max-w-xl">
           <div>
             <label htmlFor="lecture-title" className="sr-only">
               Lecture title
@@ -158,7 +334,7 @@ const ManageCourse = () => {
               placeholder="Lecture title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-300"
               required
             />
           </div>
@@ -172,21 +348,58 @@ const ManageCourse = () => {
               placeholder="Video URL"
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-300"
               required
             />
           </div>
           <button
             type="submit"
             disabled={submitting}
-            className="bg-black text-white px-5 py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:pointer-events-none"
+            className="px-4 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:pointer-events-none transition-colors"
           >
-            {submitting ? "Adding..." : "Add lecture"}
+            {submitting ? "Adding…" : "Add lecture"}
           </button>
         </form>
       </section>
+
+      {/* Delete confirmation */}
+      {deleteConfirmLecture && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20"
+          aria-modal="true"
+          role="dialog"
+          aria-labelledby="delete-dialog-title"
+        >
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 max-w-sm w-full">
+            <h3 id="delete-dialog-title" className="text-base font-medium text-gray-900 mb-2">
+              Delete lecture?
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              “{deleteConfirmLecture.title}” will be permanently removed.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={cancelDelete}
+                disabled={deletingLectureId !== null}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteLecture}
+                disabled={deletingLectureId !== null}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {deletingLectureId ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
+}
 
 export default ManageCourse;

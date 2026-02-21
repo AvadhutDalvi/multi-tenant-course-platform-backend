@@ -147,6 +147,107 @@ CourseRouter.post(
     }
 );
 
+// update lecture (educator only, course + lecture ownership validated)
+CourseRouter.put(
+    "/:courseId/lecture/:lectureId",
+    authMiddleware,
+    roleMiddleware("educator"),
+    async function (req, res) {
+        try {
+            const { courseId, lectureId } = req.params;
+            const { title, videoUrl } = req.body;
+
+            if (!mongoose.Types.ObjectId.isValid(courseId) || !mongoose.Types.ObjectId.isValid(lectureId)) {
+                return res.status(400).json({ message: "Invalid course or lecture ID" });
+            }
+
+            const course = await coursemodel.findOne({
+                _id: courseId,
+                educator: req.user.id
+            });
+            if (!course) {
+                return res.status(403).json({ message: "You cannot edit lectures in this course" });
+            }
+
+            const lecture = await lecturemodel.findOne({
+                _id: lectureId,
+                course: courseId
+            });
+            if (!lecture) {
+                return res.status(404).json({ message: "Lecture not found" });
+            }
+
+            if (title !== undefined) {
+                if (typeof title !== "string" || !title.trim()) {
+                    return res.status(400).json({ message: "Lecture title is required" });
+                }
+                lecture.title = title.trim();
+            }
+            if (videoUrl !== undefined && typeof videoUrl === "string") {
+                lecture.videoUrl = videoUrl.trim() || lecture.videoUrl;
+            }
+
+            await lecture.save();
+
+            const lectures = await lecturemodel
+                .find({ course: courseId })
+                .sort({ createdAt: 1 })
+                .lean();
+
+            res.json({ message: "Lecture updated", lectures });
+        } catch (error) {
+            res.status(500).json({ message: error.message || "Failed to update lecture" });
+        }
+    }
+);
+
+// delete lecture (educator only, course + lecture ownership validated)
+CourseRouter.delete(
+    "/:courseId/lecture/:lectureId",
+    authMiddleware,
+    roleMiddleware("educator"),
+    async function (req, res) {
+        try {
+            const { courseId, lectureId } = req.params;
+
+            if (!mongoose.Types.ObjectId.isValid(courseId) || !mongoose.Types.ObjectId.isValid(lectureId)) {
+                return res.status(400).json({ message: "Invalid course or lecture ID" });
+            }
+
+            const course = await coursemodel.findOne({
+                _id: courseId,
+                educator: req.user.id
+            });
+            if (!course) {
+                return res.status(403).json({ message: "You cannot delete lectures from this course" });
+            }
+
+            const lecture = await lecturemodel.findOne({
+                _id: lectureId,
+                course: courseId
+            });
+            if (!lecture) {
+                return res.status(404).json({ message: "Lecture not found" });
+            }
+
+            await lecturemodel.findByIdAndDelete(lectureId);
+            course.lectures = course.lectures.filter(
+                (id) => id.toString() !== lectureId
+            );
+            await course.save();
+
+            const lectures = await lecturemodel
+                .find({ course: courseId })
+                .sort({ createdAt: 1 })
+                .lean();
+
+            res.json({ message: "Lecture deleted", lectures });
+        } catch (error) {
+            res.status(500).json({ message: error.message || "Failed to delete lecture" });
+        }
+    }
+);
+
 //enrolled
 CourseRouter.get(
     "/enrolled",
@@ -283,13 +384,13 @@ CourseRouter.get(
 CourseRouter.get("/:courseId", authMiddleware, async (req, res) => {
     try {
         const { courseId } = req.params;
+        console.log("Schema paths:");
+        console.log(Object.keys(coursemodel.schema.paths));
         if (!mongoose.Types.ObjectId.isValid(courseId)) {
             return res.status(400).json({
                 message: "Invalid course ID"
             });
         }
-        console.log("Schema paths:");
-        console.log(Object.keys(coursemodel.schema.paths));
 
         const course = await coursemodel.findById(courseId).lean();
         if (!course) {
