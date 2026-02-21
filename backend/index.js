@@ -1,10 +1,13 @@
 require('dotenv').config()
 console.log(process.env.MONGO_URL);
-const express=require("express")
-const {CourseRouter}=require("./routes/course")
-const {UserRouter}=require("./routes/user")
-const {adminRouter}=require("./routes/admin")
-const mongoose=require("mongoose")
+const express = require("express");
+const { CourseRouter } = require("./routes/course");
+const { UserRouter } = require("./routes/user");
+const { adminRouter } = require("./routes/admin");
+const mongoose = require("mongoose");
+
+// Allow populate('lectures') etc. without strict path errors
+mongoose.set("strictPopulate", false);
 
 const cors = require("cors");
 

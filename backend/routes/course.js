@@ -1,7 +1,7 @@
-
 const { Router } = require("express");
+const mongoose = require("mongoose");
 const CourseRouter = Router();
-const { coursemodel, purchasemodel, lecturemodel, progressmodel  } = require("../db");
+const { coursemodel, purchasemodel, lecturemodel, progressmodel } = require("../db");
 const { authMiddleware, roleMiddleware } = require("../middleware/auth");
 
 //progress
@@ -87,7 +87,7 @@ CourseRouter.post(
     }
 );
 
-//crete / add lecture
+// add lecture (educator only, ownership validated)
 CourseRouter.post(
     "/:courseId/lecture",
     authMiddleware,
@@ -97,6 +97,12 @@ CourseRouter.post(
         try {
             const { courseId } = req.params;
             const { title, videoUrl } = req.body;
+
+            if (!title || typeof title !== "string" || !title.trim()) {
+                return res.status(400).json({
+                    message: "Lecture title is required"
+                });
+            }
 
             // 1️⃣ Verify course ownership
             const course = await coursemodel.findOne({
@@ -122,14 +128,15 @@ CourseRouter.post(
 
             await course.save();
 
-            // 3️⃣ Return updated lectures (BEST PRACTICE)
-            const updatedCourse = await coursemodel
-                .findById(courseId)
-                .populate("lectures");
+            // 3️⃣ Return updated lectures (fetch without populate to avoid strictPopulate issues)
+            const lectures = await lecturemodel
+                .find({ course: courseId })
+                .sort({ createdAt: 1 })
+                .lean();
 
             res.json({
                 message: "Lecture added successfully",
-                lectures: updatedCourse.lectures
+                lectures
             });
 
         } catch (error) {
@@ -256,6 +263,7 @@ CourseRouter.get(
   roleMiddleware("educator"),
   async function (req, res) {
     try {
+        
       const courses = await coursemodel.find({
         educator: req.user.id
       });
@@ -275,18 +283,33 @@ CourseRouter.get(
 CourseRouter.get("/:courseId", authMiddleware, async (req, res) => {
     try {
         const { courseId } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(courseId)) {
+            return res.status(400).json({
+                message: "Invalid course ID"
+            });
+        }
+        console.log("Schema paths:");
+        console.log(Object.keys(coursemodel.schema.paths));
 
-        const course = await coursemodel.findById(courseId)
-            .populate("lectures"); // if lectures are separate schema
-
+        const course = await coursemodel.findById(courseId).lean();
         if (!course) {
             return res.status(404).json({
                 message: "Course not found"
             });
         }
 
-        res.json({ course });
+        // Fetch lectures separately (no populate — avoids strictPopulate error)
+        const lectures = await lecturemodel
+            .find({ course: courseId })
+            .sort({ createdAt: 1 })
+            .lean();
 
+        res.json({
+            course: {
+                ...course,
+                lectures
+            }
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -42,7 +42,7 @@ const userschema = new Schema({
     }
 });
 
-const courseschema = new Schema({
+const courseschema = new mongoose.Schema({
     title: { type: String, required: true },
     description: String,
     price: { type: Number, required: true },
@@ -52,10 +52,13 @@ const courseschema = new Schema({
         ref: "users",
         required: true
     },
-    lectures: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "lectures"
-    }],
+    lectures: {
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "lectures"
+        }],
+        default: []
+    },
     createdAt: {
         type: Date,
         default: Date.now
