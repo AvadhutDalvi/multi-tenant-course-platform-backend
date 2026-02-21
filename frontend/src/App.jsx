@@ -3,6 +3,12 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import MyCourses from "./pages/student/MyCourses";
+import CourseLearning from "./pages/student/CourseLearning";
+import EducatorMyCourses from "./pages/educator/MyCourses";
+import CreateCourse from "./pages/educator/CreateCourse";
+import ManageCourse from "./pages/educator/ManageCourse";
+
 
 
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -27,9 +33,14 @@ function App() {
         </ProtectedRoute>
       }
       >
-      <Route index element={<StudentDashboard />} />
-      <Route path="educator" element={<EducatorDashboard />} />
-    </Route>
+        <Route path="educator/my-courses" element={<EducatorMyCourses />} />
+        <Route path="create-course" element={<CreateCourse />} />
+        <Route path="course/:courseId" element={<CourseLearning />} />
+        <Route path="student/my-courses" element={<MyCourses />} />
+        <Route index element={<StudentDashboard />} />
+        <Route path="educator" element={<EducatorDashboard />} />
+        <Route path="manage-course/:courseId" element={<ManageCourse />}/>
+      </Route>
 
     </Routes >
   );

@@ -23,7 +23,7 @@ function Sidebar() {
             <Link to="/dashboard" className="block text-gray-700 hover:text-black">
               Dashboard
             </Link>
-            <Link to="/dashboard/my-courses" className="block text-gray-700 hover:text-black">
+            <Link to="/dashboard/student/my-courses" className="block text-gray-700 hover:text-black">
               My Courses
             </Link>
             <Link to="/dashboard/progress" className="block text-gray-700 hover:text-black">
@@ -37,7 +37,7 @@ function Sidebar() {
             <Link to="/dashboard" className="block text-gray-700 hover:text-black">
               Dashboard
             </Link>
-            <Link to="/dashboard/my-courses" className="block text-gray-700 hover:text-black">
+            <Link to="/dashboard/educator/my-courses" className="block text-gray-700 hover:text-black">
               My Courses
             </Link>
             <Link to="/dashboard/create-course" className="block text-gray-700 hover:text-black">

@@ -94,36 +94,53 @@ CourseRouter.post(
     roleMiddleware("educator"),
     async function (req, res) {
 
-        const { courseId } = req.params;
-        const { title, videoUrl } = req.body;
+        try {
+            const { courseId } = req.params;
+            const { title, videoUrl } = req.body;
 
-        // 1️⃣ Check course exists and belongs to educator
-        const course = await coursemodel.findOne({
-            _id: courseId,
-            educator: req.user.id
-        });
+            // 1️⃣ Verify course ownership
+            const course = await coursemodel.findOne({
+                _id: courseId,
+                educator: req.user.id
+            });
 
-        if (!course) {
-            return res.status(403).json({
-                message: "You cannot add lecture to this course"
+            if (!course) {
+                return res.status(403).json({
+                    message: "You cannot add lecture to this course"
+                });
+            }
+
+            // 2️⃣ Create lecture
+            const lecture = await lecturemodel.create({
+                title,
+                videoUrl,
+                course: courseId
+            });
+
+            // add lecture to course lectures array
+            course.lectures.push(lecture._id);
+
+            await course.save();
+
+            // 3️⃣ Return updated lectures (BEST PRACTICE)
+            const updatedCourse = await coursemodel
+                .findById(courseId)
+                .populate("lectures");
+
+            res.json({
+                message: "Lecture added successfully",
+                lectures: updatedCourse.lectures
+            });
+
+        } catch (error) {
+            res.status(500).json({
+                message: error.message
             });
         }
-
-        // 2️⃣ Create lecture
-        const lecture = await lecturemodel.create({
-            title,
-            videoUrl,
-            course: courseId
-        });
-
-        res.json({
-            message: "Lecture added successfully",
-            lectureId: lecture._id
-        });
     }
 );
 
-//enrooled
+//enrolled
 CourseRouter.get(
     "/enrolled",
     authMiddleware,
@@ -198,6 +215,10 @@ CourseRouter.post(
     }
 );
 
+
+
+
+
 //create
 CourseRouter.post(
     "/create",
@@ -227,6 +248,49 @@ CourseRouter.post(
         }
     }
 );
+
+//get the cousrses created by the educator
+CourseRouter.get(
+  "/creator",
+  authMiddleware,
+  roleMiddleware("educator"),
+  async function (req, res) {
+    try {
+      const courses = await coursemodel.find({
+        educator: req.user.id
+      });
+
+      res.json({
+        courses
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        message: "Error fetching educator courses"
+      });
+    }
+  }
+);
+
+CourseRouter.get("/:courseId", authMiddleware, async (req, res) => {
+    try {
+        const { courseId } = req.params;
+
+        const course = await coursemodel.findById(courseId)
+            .populate("lectures"); // if lectures are separate schema
+
+        if (!course) {
+            return res.status(404).json({
+                message: "Course not found"
+            });
+        }
+
+        res.json({ course });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 
 //all
 CourseRouter.get("/all", async function (req, res) {

@@ -52,6 +52,10 @@ const courseschema = new Schema({
         ref: "users",
         required: true
     },
+    lectures: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "lectures"
+    }],
     createdAt: {
         type: Date,
         default: Date.now
