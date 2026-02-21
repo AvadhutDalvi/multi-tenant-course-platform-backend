@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const mongoose = require("mongoose");
 const CourseRouter = Router();
-const { coursemodel, purchasemodel, lecturemodel, progressmodel } = require("../db");
+const { coursemodel, purchasemodel, lecturemodel, progressmodel, channelmodel } = require("../db");
 const { authMiddleware, roleMiddleware } = require("../middleware/auth");
 
 //progress
@@ -104,13 +104,13 @@ CourseRouter.post(
                 });
             }
 
-            // 1️⃣ Verify course ownership
-            const course = await coursemodel.findOne({
-                _id: courseId,
-                educator: req.user.id
-            });
-
+            // 1️⃣ Verify course ownership (via channel)
+            const course = await coursemodel.findById(courseId);
             if (!course) {
+                return res.status(404).json({ message: "Course not found" });
+            }
+            const channel = await channelmodel.findById(course.channel);
+            if (!channel || channel.owner.toString() !== req.user.id) {
                 return res.status(403).json({
                     message: "You cannot add lecture to this course"
                 });
@@ -161,11 +161,12 @@ CourseRouter.put(
                 return res.status(400).json({ message: "Invalid course or lecture ID" });
             }
 
-            const course = await coursemodel.findOne({
-                _id: courseId,
-                educator: req.user.id
-            });
+            const course = await coursemodel.findById(courseId);
             if (!course) {
+                return res.status(404).json({ message: "Course not found" });
+            }
+            const channel = await channelmodel.findById(course.channel);
+            if (!channel || channel.owner.toString() !== req.user.id) {
                 return res.status(403).json({ message: "You cannot edit lectures in this course" });
             }
 
@@ -214,11 +215,12 @@ CourseRouter.delete(
                 return res.status(400).json({ message: "Invalid course or lecture ID" });
             }
 
-            const course = await coursemodel.findOne({
-                _id: courseId,
-                educator: req.user.id
-            });
+            const course = await coursemodel.findById(courseId);
             if (!course) {
+                return res.status(404).json({ message: "Course not found" });
+            }
+            const channel = await channelmodel.findById(course.channel);
+            if (!channel || channel.owner.toString() !== req.user.id) {
                 return res.status(403).json({ message: "You cannot delete lectures from this course" });
             }
 
@@ -327,22 +329,28 @@ CourseRouter.post(
 
 
 
-//create
+// create course (educator must have a channel first)
 CourseRouter.post(
     "/create",
     authMiddleware,
     roleMiddleware("educator"),
     async function (req, res) {
-
         const { title, description, price, imageURL } = req.body;
 
         try {
+            const channel = await channelmodel.findOne({ owner: req.user.id });
+            if (!channel) {
+                return res.status(400).json({
+                    message: "You must create a channel before creating courses"
+                });
+            }
+
             const course = await coursemodel.create({
                 title,
                 description,
                 price,
                 imageURL,
-                educator: req.user.id
+                channel: channel._id
             });
 
             res.json({
@@ -351,41 +359,37 @@ CourseRouter.post(
             });
         } catch (err) {
             res.status(500).json({
-                message: "Error creating course"
+                message: err.message || "Error creating course"
             });
         }
     }
 );
 
-//get the cousrses created by the educator
+// get courses created by the educator (via their channel)
 CourseRouter.get(
-  "/creator",
-  authMiddleware,
-  roleMiddleware("educator"),
-  async function (req, res) {
-    try {
-        
-      const courses = await coursemodel.find({
-        educator: req.user.id
-      });
-
-      res.json({
-        courses
-      });
-
-    } catch (error) {
-      res.status(500).json({
-        message: "Error fetching educator courses"
-      });
+    "/creator",
+    authMiddleware,
+    roleMiddleware("educator"),
+    async function (req, res) {
+        try {
+            const channel = await channelmodel.findOne({ owner: req.user.id });
+            if (!channel) {
+                return res.json({ courses: [] });
+            }
+            const courses = await coursemodel.find({ channel: channel._id });
+            res.json({ courses });
+        } catch (error) {
+            res.status(500).json({
+                message: error.message || "Error fetching educator courses"
+            });
+        }
     }
-  }
 );
 
 CourseRouter.get("/:courseId", authMiddleware, async (req, res) => {
     try {
         const { courseId } = req.params;
-        console.log("Schema paths:");
-        console.log(Object.keys(coursemodel.schema.paths));
+
         if (!mongoose.Types.ObjectId.isValid(courseId)) {
             return res.status(400).json({
                 message: "Invalid course ID"

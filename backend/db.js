@@ -42,14 +42,35 @@ const userschema = new Schema({
     }
 });
 
+const channelSchema = new Schema({
+    name: { type: String, required: true },
+    slug: { type: String, required: true, unique: true, lowercase: true },
+    description: String,
+    logo: String,
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+channelSchema.pre("save", function (next) {
+    if (this.slug) this.slug = this.slug.trim().toLowerCase();
+    next();
+});
+
 const courseschema = new mongoose.Schema({
     title: { type: String, required: true },
     description: String,
     price: { type: Number, required: true },
     imageURL: String,
-    educator: {
+    channel: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "users",
+        ref: "channels",
         required: true
     },
     lectures: {
@@ -99,11 +120,13 @@ const lectureschema = new Schema({
 const progressmodel = mongoose.model("progress", progressSchema);
 const lecturemodel = mongoose.model("lectures", lectureschema);
 const usermodel = mongoose.model("users", userschema);
+const channelmodel = mongoose.model("channels", channelSchema);
 const coursemodel = mongoose.model("courses", courseschema);
 const purchasemodel = mongoose.model("purchases", purchaseschema);
 
 module.exports = {
     usermodel,
+    channelmodel,
     coursemodel,
     purchasemodel,
     lecturemodel,

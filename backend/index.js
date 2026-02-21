@@ -4,6 +4,7 @@ const express = require("express");
 const { CourseRouter } = require("./routes/course");
 const { UserRouter } = require("./routes/user");
 const { adminRouter } = require("./routes/admin");
+const { ChannelRouter, ChannelsListRouter } = require("./routes/channel");
 const mongoose = require("mongoose");
 
 // Allow populate('lectures') etc. without strict path errors
@@ -16,9 +17,11 @@ app.use(cors());
 
 app.use(express.json());
 
-app.use("/user",UserRouter)
-app.use("/admin",adminRouter)
-app.use("/course",CourseRouter)
+app.use("/user", UserRouter);
+app.use("/admin", adminRouter);
+app.use("/course", CourseRouter);
+app.use("/channels", ChannelsListRouter);
+app.use("/channel", ChannelRouter);
 
 
 
