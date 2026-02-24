@@ -58,9 +58,8 @@ const channelSchema = new Schema({
     }
 });
 
-channelSchema.pre("save", function (next) {
+channelSchema.pre("save", function () {
     if (this.slug) this.slug = this.slug.trim().toLowerCase();
-    next();
 });
 
 const courseschema = new mongoose.Schema({

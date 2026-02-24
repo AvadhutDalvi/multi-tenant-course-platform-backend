@@ -8,7 +8,8 @@ import CourseLearning from "./pages/student/CourseLearning";
 import EducatorMyCourses from "./pages/educator/MyCourses";
 import CreateCourse from "./pages/educator/CreateCourse";
 import ManageCourse from "./pages/educator/ManageCourse";
-
+import CreateChannel from "./pages/educator/CreateChannel";
+import Search from "./pages/student/Search";
 
 
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -26,6 +27,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
+     
       {/* Dashboard Routes */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
@@ -34,12 +36,14 @@ function App() {
       }
       >
         <Route path="educator/my-courses" element={<EducatorMyCourses />} />
+        <Route path="create-channel" element={<CreateChannel />} />
         <Route path="create-course" element={<CreateCourse />} />
         <Route path="course/:courseId" element={<CourseLearning />} />
         <Route path="student/my-courses" element={<MyCourses />} />
         <Route index element={<StudentDashboard />} />
         <Route path="educator" element={<EducatorDashboard />} />
         <Route path="manage-course/:courseId" element={<ManageCourse />}/>
+        <Route path="search" element={<Search />} />
       </Route>
 
     </Routes >

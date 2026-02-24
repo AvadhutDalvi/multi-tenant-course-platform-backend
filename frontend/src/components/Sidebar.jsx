@@ -1,13 +1,29 @@
 
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../services/api";
 
 
 function Sidebar() {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const role = user?.role; // get role from JWT
+
+  const handleCreateCourseClick = async (e) => {
+    e.preventDefault();
+    try {
+      await api.get("/channel/me");
+      navigate("/dashboard/create-course");
+    } catch (err) {
+      if (err.response?.status === 404) {
+        navigate("/dashboard/create-channel");
+      } else {
+        navigate("/dashboard/create-channel");
+      }
+    }
+  };
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 p-6">
@@ -40,9 +56,12 @@ function Sidebar() {
             <Link to="/dashboard/educator/my-courses" className="block text-gray-700 hover:text-black">
               My Courses
             </Link>
-            <Link to="/dashboard/create-course" className="block text-gray-700 hover:text-black">
+            <button
+              onClick={handleCreateCourseClick}
+              className="block text-left text-gray-700 hover:text-black w-full"
+            >
               Create Course
-            </Link>
+            </button>
           </>
         )}
 

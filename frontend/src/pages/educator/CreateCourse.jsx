@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 
@@ -8,6 +8,30 @@ function CreateCourse() {
   const [price, setPrice] = useState("");
 
   const navigate = useNavigate();
+
+  const [checkingChannel, setCheckingChannel] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const checkChannel = async () => {
+      try {
+        setCheckingChannel(true);
+        setError(null);
+        await api.get("/channel/me");
+        setCheckingChannel(false);
+      } catch (err) {
+        if (err.response?.status === 404) {
+          navigate("/dashboard/create-channel");
+        } else {
+          console.error(err);
+          setError(err.response?.data?.message || "Failed to verify channel.");
+          setCheckingChannel(false);
+        }
+      }
+    };
+
+    checkChannel();
+  }, [navigate]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -25,9 +49,21 @@ function CreateCourse() {
     }
   };
 
+  if (checkingChannel) {
+    return (
+      <div className="text-gray-600">Checking channel…</div>
+    );
+  }
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-8">Create Course</h1>
+
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleCreate} className="space-y-6 max-w-lg">
         <input
