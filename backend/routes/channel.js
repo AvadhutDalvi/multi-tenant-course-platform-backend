@@ -147,7 +147,7 @@ ChannelRouter.get(
     }
 );
 
-// GET /channels – list all channels (mount this router at /channels)
+// GET /channels – list & search channels (mounted at /channels)
 ChannelsListRouter.get(
     "/",
     async (req, res) => {
@@ -162,6 +162,27 @@ ChannelsListRouter.get(
     }
 );
 
+// GET /channels/search?q= – search channels by name (public)
+ChannelsListRouter.get("/search", async (req, res) => {
+    try {
+        const { q } = req.query;
+
+        if (!q || !q.trim()) {
+            return res.json({ channels: [] });
+        }
+
+        const channels = await channelmodel.find({
+            name: { $regex: q, $options: "i" }
+        }).select("name slug description logo");
+
+        res.json({ channels });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Error searching channels"
+        });
+    }
+});
 module.exports = {
     ChannelRouter,
     ChannelsListRouter

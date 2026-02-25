@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import MyCourses from "./pages/student/MyCourses";
 import CourseLearning from "./pages/student/CourseLearning";
+import ChannelPage from "./pages/student/ChannelPage";
 import EducatorMyCourses from "./pages/educator/MyCourses";
 import CreateCourse from "./pages/educator/CreateCourse";
 import ManageCourse from "./pages/educator/ManageCourse";
@@ -44,6 +45,7 @@ function App() {
         <Route path="educator" element={<EducatorDashboard />} />
         <Route path="manage-course/:courseId" element={<ManageCourse />}/>
         <Route path="search" element={<Search />} />
+        <Route path="channel/:slug" element={<ChannelPage />} />
       </Route>
 
     </Routes >
