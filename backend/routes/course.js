@@ -4,6 +4,107 @@ const CourseRouter = Router();
 const { coursemodel, purchasemodel, lecturemodel, progressmodel, channelmodel } = require("../db");
 const { authMiddleware, roleMiddleware } = require("../middleware/auth");
 
+// Consolidated LMS data for a course
+async function learnCourse(req, res) {
+    try {
+        const { courseId } = req.params;
+        const studentId = req.user.id;
+
+        if (!mongoose.Types.ObjectId.isValid(courseId)) {
+            return res.status(400).json({ message: "Invalid course ID" });
+        }
+
+        // 1️⃣ Verify enrollment via progress document
+        const progress = await progressmodel.findOne({
+            student: studentId,
+            course: courseId
+        });
+
+        if (!progress) {
+            return res.status(403).json({
+                message: "Not enrolled in this course"
+            });
+        }
+
+        // 2️⃣ Fetch course
+        const courseDoc = await coursemodel.findById(courseId).lean();
+        if (!courseDoc) {
+            return res.status(404).json({
+                message: "Course not found"
+            });
+        }
+
+        // Optionally attach channel name + slug
+        let course = courseDoc;
+        if (courseDoc.channel) {
+            const chan = await channelmodel
+                .findById(courseDoc.channel)
+                .select("name slug")
+                .lean();
+
+            if (chan) {
+                course = {
+                    ...courseDoc,
+                    channel: {
+                        _id: chan._id,
+                        name: chan.name,
+                        slug: chan.slug
+                    }
+                };
+            }
+        }
+
+        // 3️⃣ Fetch lectures for this course
+        const lectures = await lecturemodel
+            .find({ course: courseId })
+            .sort({ order: 1 })
+            .lean();
+
+        const totalLectures = lectures.length;
+
+        // 4️⃣ Determine current lecture
+        const completedSet = new Set(
+            (progress.completedLectures || []).map((id) => String(id))
+        );
+
+        let currentLecture = null;
+        if (lectures.length > 0) {
+            currentLecture =
+                lectures.find((lec) => !completedSet.has(String(lec._id))) ||
+                lectures[lectures.length - 1];
+        }
+
+        // 5️⃣ Recalculate stats safely
+        const completedCount = lectures.filter((lec) =>
+            completedSet.has(String(lec._id))
+        ).length;
+
+        const percentage =
+            totalLectures === 0
+                ? 0
+                : Math.round((completedCount / totalLectures) * 100);
+
+        return res.json({
+            course,
+            lectures,
+            progress: {
+                completedLectures: progress.completedLectures || [],
+                percentage
+            },
+            currentLecture,
+            stats: {
+                totalLectures,
+                completedCount
+            }
+        });
+    } catch (err) {
+        console.error("Error in learnCourse:", err);
+        return res.status(500).json({
+            message: "Failed to load course learn data"
+        });
+    }
+}
+
 //progress
 CourseRouter.get(
     "/:courseId/progress",
@@ -37,6 +138,14 @@ CourseRouter.get(
             percentage: updatedPercentage
         });
     }
+);
+
+// consolidated LMS data for a course
+CourseRouter.get(
+    "/:courseId/learn",
+    authMiddleware,
+    roleMiddleware("student"),
+    learnCourse
 );
 
 //mark lecture complete
