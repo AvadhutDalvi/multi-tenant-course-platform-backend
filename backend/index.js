@@ -1,5 +1,5 @@
-require('dotenv').config()
-console.log(process.env.MONGO_URL);
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 const express = require("express");
 const { CourseRouter } = require("./routes/course");
 const { UserRouter } = require("./routes/user");

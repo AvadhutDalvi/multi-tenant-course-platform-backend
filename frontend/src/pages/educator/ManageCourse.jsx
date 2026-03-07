@@ -23,7 +23,12 @@ function ManageCourse() {
   const [error, setError] = useState(null);
 
   const [title, setTitle] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [moduleName, setModuleName] = useState("");
+  const [videoFile, setVideoFile] = useState(null);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [addFormKey, setAddFormKey] = useState(0);
 
   const [editingLectureId, setEditingLectureId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
@@ -52,26 +57,42 @@ function ManageCourse() {
     }
   };
 
+  const clearAddForm = () => {
+    setTitle("");
+    setDescription("");
+    setModuleName("");
+    setVideoFile(null);
+    setThumbnailFile(null);
+  };
+
   const handleAddLecture = async (e) => {
     e.preventDefault();
     const trimmedTitle = title.trim();
-    const trimmedUrl = videoUrl.trim();
-    if (!trimmedTitle || !trimmedUrl) return;
+    if (!trimmedTitle) return;
+    if (!videoFile) {
+      setError("Please select a video file.");
+      return;
+    }
 
     try {
       setSubmitting(true);
       setError(null);
-      const res = await api.post(`/course/${courseId}/lecture`, {
-        title: trimmedTitle,
-        videoUrl: trimmedUrl,
-      });
-      setLectures(res.data.lectures ?? []);
-      setTitle("");
-      setVideoUrl("");
+      setSuccessMessage(null);
+      const formData = new FormData();
+      formData.append("title", trimmedTitle);
+      formData.append("description", description.trim());
+      formData.append("module", moduleName.trim() || "Default");
+      formData.append("video", videoFile);
+      if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
+
+      await api.post(`/course/${courseId}/lecture/upload`, formData);
+      clearAddForm();
+      setAddFormKey((k) => k + 1);
+      setSuccessMessage("Lecture uploaded successfully.");
       await fetchCourse();
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || "Failed to add lecture.");
+      setError(err.response?.data?.message || "Failed to upload lecture.");
     } finally {
       setSubmitting(false);
     }
@@ -192,6 +213,15 @@ function ManageCourse() {
           role="alert"
         >
           {error}
+        </div>
+      )}
+
+      {successMessage && (
+        <div
+          className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
+          role="status"
+        >
+          {successMessage}
         </div>
       )}
 
@@ -323,14 +353,19 @@ function ManageCourse() {
         <h2 className="text-lg font-medium text-gray-900 mb-4">
           Add new lecture
         </h2>
-        <form onSubmit={handleAddLecture} className="space-y-4 max-w-xl">
+        <form
+          key={addFormKey}
+          onSubmit={handleAddLecture}
+          className="space-y-4 max-w-xl"
+        >
           <div>
-            <label htmlFor="lecture-title" className="sr-only">
+            <label htmlFor="lecture-title" className="block text-sm font-medium text-gray-700 mb-1">
               Lecture title
             </label>
             <input
               id="lecture-title"
               type="text"
+              name="title"
               placeholder="Lecture title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -339,17 +374,58 @@ function ManageCourse() {
             />
           </div>
           <div>
-            <label htmlFor="lecture-video-url" className="sr-only">
-              Video URL
+            <label htmlFor="lecture-description" className="block text-sm font-medium text-gray-700 mb-1">
+              Description
+            </label>
+            <textarea
+              id="lecture-description"
+              name="description"
+              placeholder="Description (optional)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-300"
+            />
+          </div>
+          <div>
+            <label htmlFor="lecture-module" className="block text-sm font-medium text-gray-700 mb-1">
+              Module
             </label>
             <input
-              id="lecture-video-url"
-              type="url"
-              placeholder="Video URL"
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
+              id="lecture-module"
+              type="text"
+              name="module"
+              placeholder="Module name (optional)"
+              value={moduleName}
+              onChange={(e) => setModuleName(e.target.value)}
               className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-300"
+            />
+          </div>
+          <div>
+            <label htmlFor="lecture-video" className="block text-sm font-medium text-gray-700 mb-1">
+              Video upload
+            </label>
+            <input
+              id="lecture-video"
+              type="file"
+              name="video"
+              accept="video/*"
+              onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
+              className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-800"
               required
+            />
+          </div>
+          <div>
+            <label htmlFor="lecture-thumbnail" className="block text-sm font-medium text-gray-700 mb-1">
+              Thumbnail upload (optional)
+            </label>
+            <input
+              id="lecture-thumbnail"
+              type="file"
+              name="thumbnail"
+              accept="image/*"
+              onChange={(e) => setThumbnailFile(e.target.files?.[0] ?? null)}
+              className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-800"
             />
           </div>
           <button
@@ -357,7 +433,7 @@ function ManageCourse() {
             disabled={submitting}
             className="px-4 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:pointer-events-none transition-colors"
           >
-            {submitting ? "Adding…" : "Add lecture"}
+            {submitting ? "Uploading…" : "Add lecture"}
           </button>
         </form>
       </section>

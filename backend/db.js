@@ -105,11 +105,49 @@ const purchaseschema = new Schema({
 const lectureschema = new Schema({
     title: { type: String, required: true },
     videoUrl: { type: String, required: true },
+
+    description: { type: String },
+
+    module: {
+        type: String,
+        required: true
+    },
+
+    order: {
+        type: Number,
+        required: true
+    },
+
+    duration: {
+        type: String // "12:45"
+    },
+
+    video: {
+        url: String,
+        public_id: String
+    },
+
+    thumbnail: {
+        url: String,
+        public_id: String
+    },
+
+    materials: [{
+        title: String,
+        url: String
+    }],
+
+    practiceSheet: {
+        title: String,
+        url: String
+    },
+
     course: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "courses",
         required: true
     },
+
     createdAt: {
         type: Date,
         default: Date.now
