@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { btnPrimary, card, cardHover, inputStyle } from "../../styles/theme";
 
 function GlobalSearchBar() {
   const [term, setTerm] = useState("");
@@ -35,11 +36,11 @@ function GlobalSearchBar() {
         value={term}
         onChange={(e) => setTerm(e.target.value)}
         placeholder="Search for courses or channels..."
-        className="flex-1 bg-transparent outline-none text-sm text-gray-900 placeholder-gray-400"
+        className={` flex-1 bg-transparent outline-none text-sm text-gray-900 placeholder-gray-400`}
       />
       <button
         type="submit"
-        className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        className={`${btnPrimary} px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors`}
       >
         Search
       </button>

@@ -47,6 +47,7 @@ const channelSchema = new Schema({
     slug: { type: String, required: true, unique: true, lowercase: true },
     description: String,
     logo: String,
+    banner: String,
     owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "users",
@@ -59,14 +60,19 @@ const channelSchema = new Schema({
 });
 
 channelSchema.pre("save", function () {
-    if (this.slug) this.slug = this.slug.trim().toLowerCase();
+    if (!this.slug && this.name) {
+        this.slug = this.name
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, "-");
+    }
 });
 
 const courseschema = new mongoose.Schema({
     title: { type: String, required: true },
     description: String,
     price: { type: Number, required: true },
-    imageURL: String,
+    image: String,
     channel: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "channels",
@@ -80,6 +86,15 @@ const courseschema = new mongoose.Schema({
         default: []
     },
     createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    status: {
+        type: String,
+        enum: ["draft", "review", "published"],
+        default: "draft"
+    },
+    updatedAt: {
         type: Date,
         default: Date.now
     }

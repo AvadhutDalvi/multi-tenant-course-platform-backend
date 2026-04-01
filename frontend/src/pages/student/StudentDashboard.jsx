@@ -1,13 +1,14 @@
 import GlobalSearchBar from "../../components/student/GlobalSearchBar";
+import { card, cardHover } from "../../styles/theme";
 
 function StudentDashboard() {
   return (
-    <div className="max-w-5xl">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">
+    <div className={`${card} ${cardHover} p-6 space-y-6 max-w-5xl`}>
+      <header>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">
           Student Dashboard
         </h1>
-        <p className="text-gray-600">
+        <p className="text-sm text-slate-600">
           Welcome back. Continue your learning.
         </p>
         <GlobalSearchBar />

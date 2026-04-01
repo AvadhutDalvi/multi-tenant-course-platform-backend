@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
+import { btnPrimary, card, cardHover, inputStyle } from "../../styles/theme";
 
 function EducatorDashboard() {
   const [channel, setChannel] = useState(null);
@@ -70,84 +71,86 @@ function EducatorDashboard() {
   }
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="p-7 space-y-8 max-w-5xl">
+      
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold mb-2">Educator Dashboard</h1>
-        <p className="text-gray-600 text-sm">
+        <h1 className="text-2xl font-bold text-slate-900">Educator Dashboard</h1>
+        <p className="text-slate-400 text-sm mt-1">
           Manage your channel and courses.
         </p>
       </div>
-
+  
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
-
-      {/* Channel overview */}
+  
+      {/* Channel */}
       {channel && (
-        <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex justify-between items-start gap-4">
+        <section className={`${card} p-6`}>
+          <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-1">
+              <h2 className="text-lg font-semibold text-slate-900">
                 {channel.name}
               </h2>
-              {channel.description && (
-                <p className="text-gray-600 text-sm mb-2">
-                  {channel.description}
-                </p>
-              )}
-              <p className="text-xs text-gray-500">
+              <p className="text-slate-500 text-sm mt-1">
+                {channel.description}
+              </p>
+              <p className="text-xs text-slate-400 mt-2">
                 Slug: <span className="font-mono">{channel.slug}</span>
               </p>
             </div>
-            <button
-              type="button"
-              className="text-sm text-gray-600 hover:text-black"
-              disabled
-            >
+  
+            <button className={btnSecondary}>
               Edit Channel
             </button>
           </div>
         </section>
       )}
-
-      {/* My courses section */}
+  
+      {/* Courses */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">My Courses</h2>
+          <h2 className="text-lg font-bold text-slate-900">My Courses</h2>
+  
           <button
             onClick={() => navigate("/dashboard/create-course")}
-            className="bg-black text-white px-5 py-2 rounded-lg text-sm font-medium"
+            className={btnPrimary}
           >
             Create Course
           </button>
         </div>
-
+  
         {courses.length === 0 ? (
-          <p className="text-gray-500 text-sm">
-            No courses created yet.
-          </p>
+          <div className={`${card} p-6 text-center`}>
+            <p className="text-slate-500 text-sm">
+              No courses created yet.
+            </p>
+          </div>
         ) : (
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {courses.map((course) => (
               <div
                 key={course._id}
-                className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"
+                className={`${card} ${cardHover} p-5`}
               >
-                <h3 className="text-base font-semibold mb-2">
+                <h3 className="text-sm font-semibold text-slate-800">
                   {course.title}
                 </h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+  
+                <p className="text-xs text-slate-500 mt-2 line-clamp-3">
                   {course.description}
                 </p>
+  
                 <button
                   onClick={() =>
                     navigate(`/dashboard/manage-course/${course._id}`)
                   }
-                  className="bg-black text-white px-4 py-2 rounded-lg text-sm"
+                  className={`${btnPrimary} w-full mt-4`}
                 >
-                  Manage
+                  Manage Course
                 </button>
               </div>
             ))}

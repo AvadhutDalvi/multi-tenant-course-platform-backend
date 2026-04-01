@@ -1,79 +1,114 @@
-import React from "react";
+import { useState } from "react";
+import { card } from "../../../styles/theme";
 
-function Sidebar({ course, modules, activeLectureId, completedIds, progress, onSelectLecture }) {
-  const completedCount = completedIds.length;
-  const totalLectures = Object.values(modules).reduce(
-    (sum, list) => sum + list.length,
-    0
+function Sidebar({
+  course,
+  modules,
+  activeLectureId,
+  completedIds,
+  progress,
+  onSelectLecture,
+}) {
+  const [openModule, setOpenModule] = useState(
+    Object.keys(modules)[0] || null
   );
 
+  const toggleModule = (moduleName) => {
+    setOpenModule((prev) =>
+      prev === moduleName ? null : moduleName
+    );
+  };
+
   return (
-    <aside className="w-72 flex-shrink-0 space-y-4">
-      {/* Course title & progress */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <h1 className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2">
-          {course.title}
-        </h1>
-        <p className="text-xs text-gray-500 mb-2">
-          Your progress
-        </p>
-        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-          <div
-            className="h-2 bg-blue-600 rounded-full transition-all"
-            style={{ width: `${progress || 0}%` }}
-          />
+    <aside className="w-80 bg-white border-r border-slate-200 flex flex-col">
+
+      {/* COURSE HEADER */}
+      <div className="p-4 border-b">
+        <h2 className="text-sm font-bold text-slate-900 line-clamp-2">
+          {course?.title}
+        </h2>
+
+        {/* Progress */}
+        <div className="mt-3">
+          <div className="flex justify-between text-xs text-slate-500 mb-1">
+            <span>Progress</span>
+            <span>{progress}%</span>
+          </div>
+
+          <div className="w-full bg-slate-100 rounded-full h-1.5">
+            <div
+              className="bg-sky-500 h-1.5 rounded-full transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
-        <p className="mt-2 text-xs text-gray-600 flex justify-between">
-          <span>
-            {completedCount} done · {Math.max(totalLectures - completedCount, 0)} left
-          </span>
-          <span className="font-medium">{Math.round(progress || 0)}%</span>
-        </p>
       </div>
 
-      {/* Modules & lectures */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 max-h-[70vh] overflow-y-auto">
+      {/* MODULES */}
+      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+
         {Object.entries(modules).map(([moduleName, lectures]) => (
-          <div key={moduleName} className="mb-3 last:mb-0">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              {moduleName}
-            </p>
-            <div className="space-y-1">
-              {lectures.map((lecture) => {
-                const isActive = lecture._id === activeLectureId;
-                const isCompleted = completedIds.includes(lecture._id);
-                return (
-                  <button
-                    key={lecture._id}
-                    type="button"
-                    onClick={() => onSelectLecture(lecture._id)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs flex items-center justify-between gap-2 transition-colors ${
-                      isActive
-                        ? "bg-blue-50 text-blue-700"
-                        : "hover:bg-gray-50 text-gray-700"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
+          <div key={moduleName} className={`${card}`}>
+
+            {/* MODULE HEADER */}
+            <button
+              onClick={() => toggleModule(moduleName)}
+              className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-slate-50 rounded-lg transition"
+            >
+              <span className="text-sm font-semibold text-slate-800">
+                {moduleName}
+              </span>
+
+              <span className="text-xs text-slate-400">
+                {lectures.length}
+              </span>
+            </button>
+
+            {/* LECTURES */}
+            {openModule === moduleName && (
+              <div className="border-t border-slate-100">
+
+                {lectures.map((lec) => {
+                  const isActive = activeLectureId === lec._id;
+                  const isCompleted = completedIds.includes(lec._id);
+
+                  return (
+                    <button
+                      key={lec._id}
+                      onClick={() => onSelectLecture(lec._id)}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition
+                        
+                        ${
+                          isActive
+                            ? "bg-sky-100 text-sky-700 font-semibold"
+                            : "text-slate-600 hover:bg-slate-50"
+                        }
+                      `}
+                    >
+                      {/* STATUS ICON */}
                       <div
-                        className={`w-4 h-4 rounded-full border flex items-center justify-center text-[10px] ${
-                          isCompleted
-                            ? "bg-green-500 border-green-500 text-white"
-                            : "border-gray-300"
-                        }`}
+                        className={`w-4 h-4 rounded-full flex items-center justify-center text-xs
+                          ${
+                            isCompleted
+                              ? "bg-green-100 text-green-600"
+                              : isActive
+                              ? "bg-sky-200 text-sky-700"
+                              : "bg-slate-200 text-slate-400"
+                          }
+                        `}
                       >
-                        {isCompleted ? "✓" : ""}
+                        {isCompleted ? "✓" : "▶"}
                       </div>
-                      <span className="truncate">{lecture.title}</span>
-                    </div>
-                    {lecture.duration && (
-                      <span className="text-[10px] text-gray-400 shrink-0">
-                        {lecture.duration}
+
+                      {/* TITLE */}
+                      <span className="flex-1 truncate">
+                        {lec.title}
                       </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -82,4 +117,3 @@ function Sidebar({ course, modules, activeLectureId, completedIds, progress, onS
 }
 
 export default Sidebar;
-

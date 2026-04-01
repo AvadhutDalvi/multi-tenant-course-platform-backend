@@ -7,6 +7,7 @@ import ActionBar from "./course/ActionBar";
 import MaterialsSection from "./course/MaterialsSection";
 import PracticeSection from "./course/PracticeSection";
 import NotesSection from "./course/NotesSection";
+import { card } from "../../styles/theme";
 
 function CourseLearn() {
   const { courseId } = useParams();
@@ -68,7 +69,8 @@ function CourseLearn() {
     return groups;
   }, [lectures]);
 
-  const activeLecture = lectures.find((l) => l._id === activeLectureId) || null;
+  const activeLecture =
+    lectures.find((l) => l._id === activeLectureId) || null;
 
   const handleSelectLecture = (lectureId) => {
     setActiveLectureId(lectureId);
@@ -84,12 +86,15 @@ function CourseLearn() {
 
       setCompletedIds((prev) => {
         if (prev.includes(activeLecture._id)) return prev;
+
         const updated = [...prev, activeLecture._id];
         const newTotal = totalLectures || lectures.length || 0;
+
         const pct =
           newTotal > 0
             ? Math.round((updated.length / newTotal) * 100)
             : 0;
+
         setProgress(pct);
         return updated;
       });
@@ -98,34 +103,40 @@ function CourseLearn() {
     }
   };
 
+  // ================= LOADING =================
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto py-6 flex items-center justify-center">
-        <p className="text-gray-600">Loading course...</p>
+      <div className="h-screen flex items-center justify-center bg-slate-50">
+        <p className="text-slate-500">Loading course...</p>
       </div>
     );
   }
 
+  // ================= ERROR =================
   if (error) {
     return (
-      <div className="max-w-6xl mx-auto py-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <div className="h-screen flex items-center justify-center bg-slate-50">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       </div>
     );
   }
 
+  // ================= NOT FOUND =================
   if (!course) {
     return (
-      <div className="max-w-6xl mx-auto py-6 flex items-center justify-center">
-        <p className="text-gray-700">Course not found.</p>
+      <div className="h-screen flex items-center justify-center bg-slate-50">
+        <p className="text-slate-600">Course not found.</p>
       </div>
     );
   }
 
+  // ================= MAIN UI =================
   return (
-    <div className="max-w-6xl mx-auto py-6 flex gap-6">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
+
+      {/* LEFT SIDEBAR */}
       <Sidebar
         course={course}
         modules={modules}
@@ -135,24 +146,61 @@ function CourseLearn() {
         onSelectLecture={handleSelectLecture}
       />
 
-      <main className="flex-1 space-y-6">
-        <VideoSection lecture={activeLecture} />
-        <ActionBar
-          course={course}
-          lecture={activeLecture}
-          progress={progress}
-          onMarkComplete={handleMarkComplete}
-          isCompleted={
-            !!activeLecture && completedIds.includes(activeLecture._id)
-          }
-        />
-        <MaterialsSection materials={activeLecture?.materials || []} />
-        <PracticeSection practiceSheet={activeLecture?.practiceSheet} />
-        <NotesSection />
+      {/* RIGHT CONTENT */}
+      <main className="flex-1 overflow-y-auto p-6 space-y-6">
+
+        {/* HEADER */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-bold text-slate-900">
+            {activeLecture?.title}
+          </h1>
+
+          <span className="text-sm font-semibold text-sky-600">
+            {progress}% completed
+          </span>
+        </div>
+
+        {/* VIDEO */}
+        <div className={`${card} overflow-hidden`}>
+          <VideoSection lecture={activeLecture} />
+        </div>
+
+        {/* ACTION BAR */}
+        <div className={`${card} p-4`}>
+          <ActionBar
+            course={course}
+            lecture={activeLecture}
+            progress={progress}
+            onMarkComplete={handleMarkComplete}
+            isCompleted={
+              !!activeLecture &&
+              completedIds.includes(activeLecture._id)
+            }
+          />
+        </div>
+
+        {/* MATERIALS */}
+        <div className={`${card} p-4`}>
+          <MaterialsSection
+            materials={activeLecture?.materials || []}
+          />
+        </div>
+
+        {/* PRACTICE */}
+        <div className={`${card} p-4`}>
+          <PracticeSection
+            practiceSheet={activeLecture?.practiceSheet}
+          />
+        </div>
+
+        {/* NOTES */}
+        <div className={`${card} p-4`}>
+          <NotesSection />
+        </div>
+
       </main>
     </div>
   );
 }
 
 export default CourseLearn;
-

@@ -467,21 +467,69 @@ CourseRouter.delete(
 
 //enrolled
 CourseRouter.get(
-    "/enrolled",
-    authMiddleware,
-    roleMiddleware("student"),
-    async function (req, res) {
+  "/enrolled",
+  authMiddleware,
+  roleMiddleware("student"),
+  async function (req, res) {
+    try {
+      const userId = req.user.id;
 
-        const purchases = await purchasemodel.find({
-            student: req.user.id
-        }).populate("course");
+      // 1. Get purchased courses
+      const purchases = await purchasemodel.find({
+        student: userId
+      }).populate("course");
 
-        const enrolledCourses = purchases.map(p => p.course);
+      // 2. Get progress data
+      const progressData = await progressmodel.find({
+        student: userId
+      });
 
-        res.json({
-            courses: enrolledCourses
-        });
+      // 3. Convert progress to map (fast lookup)
+      const progressMap = new Map();
+
+      progressData.forEach(p => {
+        progressMap.set(p.course.toString(), p);
+      });
+
+      // 4. Merge everything
+      const enrolledCourses = await Promise.all(
+        purchases.map(async (p) => {
+          const course = p.course;
+
+          const progress = progressMap.get(course._id.toString());
+
+          // count lectures
+          const totalLectures = await lecturemodel.countDocuments({
+            course: course._id
+          });
+
+          return {
+            _id: course._id,
+            title: course.title,
+            description: course.description,
+            price: course.price,
+            instructor: course.owner,
+            // 🔥 NEW DATA
+            progress: progress?.percentage || 0,
+            completedLectures: progress?.completedLectures.length || 0,
+            totalLectures: totalLectures,
+
+            
+          };
+        })
+      );
+
+      res.json({
+        courses: enrolledCourses
+      });
+
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({
+        message: "Failed to fetch enrolled courses"
+      });
     }
+  }
 );
 
 //purchase
@@ -582,23 +630,53 @@ CourseRouter.post(
 
 // get courses created by the educator (via their channel)
 CourseRouter.get(
-    "/creator",
-    authMiddleware,
-    roleMiddleware("educator"),
-    async function (req, res) {
-        try {
-            const channel = await channelmodel.findOne({ owner: req.user.id });
-            if (!channel) {
-                return res.json({ courses: [] });
-            }
-            const courses = await coursemodel.find({ channel: channel._id });
-            res.json({ courses });
-        } catch (error) {
-            res.status(500).json({
-                message: error.message || "Error fetching educator courses"
-            });
-        }
+  "/creator",
+  authMiddleware,
+  roleMiddleware("educator"),
+  async function (req, res) {
+    try {
+      const channel = await channelmodel.findOne({
+        owner: req.user.id
+      });
+
+      if (!channel) {
+        return res.json({ courses: [] });
+      }
+
+      const courses = await coursemodel.find({
+        channel: channel._id
+      });
+
+      const enrichedCourses = await Promise.all(
+        courses.map(async (course) => {
+          const students = await purchasemodel.countDocuments({
+            course: course._id
+          });
+
+          const revenue = students * course.price;
+
+          return {
+            _id: course._id,
+            title: course.title,
+            description: course.description,
+            price: course.price,
+
+            status: course.status || "draft",
+            students,
+            revenue,
+            rating: 4.5 // placeholder for now
+          };
+        })
+      );
+
+      res.json({ courses: enrichedCourses });
+
+    } catch (error) {
+      res.status(500).json({
+        message: error.message || "Error fetching educator courses"
+      });
     }
+  }
 );
 
 CourseRouter.get("/:courseId", authMiddleware, async (req, res) => {
