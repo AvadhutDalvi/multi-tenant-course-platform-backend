@@ -1,3 +1,25 @@
+import { useParams } from "react-router-dom";
+import api from "../../services/api";
+
+import { useState, useEffect } from "react";
+
+
+
+
+// useEffect(() => {
+//   // TEMP DUMMY DATA (later replace with API)
+//   const dummyCourse = {
+//     title: "Mastering Modern Typography",
+//     description:
+//       "Deep dive into the world of type design and visual hierarchy...",
+//     category: "Design & Typography",
+//     status: "Published",
+//     thumbnail: "", // later image URL
+//   };
+
+//   setCourse(dummyCourse);
+// }, [courseId]);
+
 const lectures = [
   {
     id: 1,
@@ -125,6 +147,47 @@ function ClockIcon() {
 }
 
 function ManageCourse() {
+
+  const { courseId } = useParams();
+
+  const [course, setCourse] = useState(null);
+  const [lectures, setLectures] = useState([]);;
+
+  useEffect(() => {
+    const fetchCourse = async () => {
+      try {
+        const res = await api.get(`/course/${courseId}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+
+        const data = res.data;
+
+        console.log("API RESPONSE:", data);
+
+        if (data.course) {
+          setCourse(data.course);
+          setLectures(data.course.lectures || []);
+        }
+
+      } catch (error) {
+        console.error("Error fetching course:", error);
+      }
+    };
+
+    if (courseId) {
+      fetchCourse();
+    }
+  }, [courseId]);
+
+  console.log(courseId);
+  if (!course) {
+    return <div className="p-6">Loading course...</div>;
+  }
+
+  console.log(course);
+
   return (
     <div className="min-h-screen bg-[#fbfbfe] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1180px]">
@@ -135,48 +198,56 @@ function ManageCourse() {
                 Published
               </span>
               <span className="text-[24px] font-medium tracking-[-0.02em] text-[#8D98B3]">
-                Design &amp; Typography
+
               </span>
             </div>
 
-            <h1 className="max-w-[760px] text-[34px] font-semibold leading-[1.12] tracking-[-0.04em] text-[#111827] sm:text-[44px]">
-              Mastering Modern Typography
+            <h1 className="max-w-[760px] text-[32px] font-semibold leading-[1.12] tracking-[-0.04em] text-[#111827] sm:text-[44px]">
+              {course?.title}
             </h1>
 
             <p className="mt-4 max-w-[720px] text-[18px] leading-[1.6] text-[#5F6B84]">
-              Deep dive into the world of type design and visual hierarchy. Learn to
-              curate fonts that speak louder than words in professional digital
-              interfaces.
+              {course?.description}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-4">
               <button
                 type="button"
-                className="rounded-full border border-[#5B4CF0] bg-white px-8 py-3.5 text-[24px] font-semibold tracking-[-0.03em] text-[#5748EE]"
+                className="rounded-full border border-[#5B4CF0] bg-white px-5 py-2 text-sm font-semibold text-[#5748EE] transition-all duration-200 hover:scale-105 hover:shadow-md"
               >
                 Edit Course
               </button>
               <button
                 type="button"
-                className="rounded-full bg-[#4F35F4] px-8 py-3.5 text-[24px] font-semibold tracking-[-0.03em] text-white shadow-[0_10px_24px_rgba(79,53,244,0.24)]"
+                className="rounded-full bg-[#4F35F4] px-5 py-2 text-sm font-semibold tracking-[-0.03em] text-white shadow-[0_10px_24px_rgba(79,53,244,0.24)] transition-all duration-200 hover:scale-105 hover:shadow-md"
               >
                 Publish Course
               </button>
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-[228px]">
-            <div className="relative h-[158px] overflow-hidden rounded-[28px] bg-[#1C6F73] shadow-md">
+          <div className="mx-auto w-full max-w-[260px]">
+            <div className="relative h-[180px] overflow-hidden rounded-[28px] shadow-md transition-all duration-300 ease-out hover:scale-105 hover:shadow-xl cursor-pointer">
+
+              {/* IMAGE */}
+              <img
+                src={course?.image }
+                alt="Course Thumbnail"
+                className="h-full w-full object-cover"
+              />
+
+              {/* OVERLAY */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(255,255,255,0.14),transparent_38%),linear-gradient(180deg,rgba(9,58,63,0.12),rgba(8,39,44,0.16))]" />
-              <div className="absolute right-5 top-3 text-[24px] font-semibold uppercase tracking-[0.08em] text-[#16363E]/80">
+
+              {/* TEXT */}
+              <div className="absolute right-5 top-3 text-[24px] font-semibold uppercase tracking-[0.08em] text-white/80">
                 Course
               </div>
-              <div className="absolute left-10 top-[64px] text-[11px] uppercase tracking-[0.08em] text-white/65">
-                30% safe work
-              </div>
-              <div className="absolute left-4 top-[100px] rounded-full bg-white/95 px-4 py-1.5 text-[10px] font-semibold text-[#6557EF] shadow-sm">
+
+              <div className="absolute left-4 top-[120px] rounded-full bg-white/95 px-4 py-1.5 text-[10px] font-semibold text-[#6557EF] shadow-sm">
                 Preview Thumbnail
               </div>
+
             </div>
           </div>
         </section>
@@ -253,21 +324,21 @@ function ManageCourse() {
                   <div className="flex shrink-0 items-center gap-3">
                     <button
                       type="button"
-                      className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F6F7FB] text-[#5C667E]"
+                      className="flex items-center items-center justify-center rounded-xl text-[#5C667E] transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:shadow-md active:scale-95"
                       aria-label={`Preview ${lecture.title}`}
                     >
                       <EyeIcon />
                     </button>
                     <button
                       type="button"
-                      className={`flex h-12 w-12 items-center justify-center rounded-xl bg-[#F6F7FB] ${lecture.editColor}`}
+                      className={`flex items-center items-center justify-center rounded-xl ${lecture.editColor} transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:shadow-md active:scale-95`}
                       aria-label={`Edit ${lecture.title}`}
                     >
                       <PencilIcon />
                     </button>
                     <button
                       type="button"
-                      className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F6F7FB] text-[#5C667E]"
+                      className="flex items-center items-center justify-center rounded-xl text-[#5C667E] transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:shadow-md active:scale-95"
                       aria-label={`More options for ${lecture.title}`}
                     >
                       <MoreIcon />

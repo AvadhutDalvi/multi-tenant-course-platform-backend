@@ -1,4 +1,6 @@
 import { useInstructorCourses } from "../../features/courses/hooks/useInstructorCourses";
+import { useNavigate } from "react-router-dom";
+
 
 const imageTones = [
   "from-[#10151f] via-[#1b222f] to-[#151b26]",
@@ -119,6 +121,9 @@ function SummaryCard({ card }) {
 }
 
 function CourseCard({ course }) {
+
+  console.log(course.id);
+  const navigate=useNavigate();
   return (
     <article className="grid gap-5 rounded-[30px] bg-white p-5 shadow-sm shadow-slate-200/70 md:grid-cols-[130px_minmax(0,1fr)_110px] md:items-center">
       <div className={`relative h-[92px] overflow-hidden rounded-xl bg-gradient-to-br ${course.imageTone}`}>
@@ -164,9 +169,10 @@ function CourseCard({ course }) {
       <div className="flex flex-col gap-3 md:items-end">
         <button
           type="button"
+          onClick={() => navigate(`/dashboard/educator/manage-course/${course.id}`)}
           className={`inline-flex min-w-[92px] items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition ${course.primaryTone}`}
         >
-          {course.primaryAction}
+          Manage
         </button>
         <button
           type="button"
@@ -197,6 +203,8 @@ function InstructorMyCoursesPage() {
     loading,
     error,
   } = useInstructorCourses();
+
+
 
   const formattedCourses = courses.map((course, index) => {
     const students = Number(course.students) || 0;
@@ -243,6 +251,7 @@ function InstructorMyCoursesPage() {
         : "bg-slate-50 text-slate-600 hover:bg-slate-100",
     };
   });
+
 
   const totalStudents = courses.reduce(
     (sum, course) => sum + (Number(course.students) || 0),

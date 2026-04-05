@@ -5,8 +5,15 @@ function CourseCard({ course }) {
 
   return (
     <article className="group overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-sky-100/50">
-      <div className="mb-5 flex h-40 items-end rounded-[1.25rem] bg-gradient-to-br from-sky-100 via-white to-indigo-100 p-4">
-        <div className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700 shadow-sm">
+      <div className="relative mb-5 h-40 overflow-hidden rounded-[1.25rem]">
+        <img
+          src={course.image || ""}
+          alt={course.title}
+          className="h-full w-full object-cover transition group-hover:scale-105"
+        />
+
+        {/* Overlay */}
+        <div className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700 shadow-sm">
           Enrolled
         </div>
       </div>
