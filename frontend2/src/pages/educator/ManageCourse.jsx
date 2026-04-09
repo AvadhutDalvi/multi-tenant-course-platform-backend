@@ -5,48 +5,6 @@ import { useState, useEffect } from "react";
 
 
 
-
-// useEffect(() => {
-//   // TEMP DUMMY DATA (later replace with API)
-//   const dummyCourse = {
-//     title: "Mastering Modern Typography",
-//     description:
-//       "Deep dive into the world of type design and visual hierarchy...",
-//     category: "Design & Typography",
-//     status: "Published",
-//     thumbnail: "", // later image URL
-//   };
-
-//   setCourse(dummyCourse);
-// }, [courseId]);
-
-const lectures = [
-  {
-    id: 1,
-    title: "Introduction to Serif Fonts",
-    module: "Module 1: Fundamentals",
-    duration: "12:45",
-    iconType: "play",
-    editColor: "text-[#4F46E5]",
-  },
-  {
-    id: 2,
-    title: "The Anatomy of a Character",
-    module: "Module 1: Fundamentals",
-    duration: "18:20",
-    iconType: "play",
-    editColor: "text-[#4F46E5]",
-  },
-  {
-    id: 3,
-    title: "Visual Hierarchy Rules",
-    module: "Module 2: Layout & Composition",
-    duration: "24:00",
-    iconType: "text",
-    editColor: "text-[#E25463]",
-  },
-];
-
 function DotsGridIcon() {
   return (
     <svg viewBox="0 0 16 16" className="h-4 w-4" fill="currentColor" aria-hidden="true">
@@ -189,11 +147,12 @@ function ManageCourse() {
   console.log(course);
 
   return (
-    <div className="min-h-screen bg-[#fbfbfe] px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#fbfbfe] px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1180px]">
-        <section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_228px] lg:items-start">
+        {/* the main top bar with title and image  */}
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-start">
           <div className="pt-1">
-            <div className="mb-3 flex items-center gap-3">
+            <div className="mb-3 flex items-center gap-4">
               <span className="rounded-full bg-[#DDF7E8] px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-[#6DB68A]">
                 Published
               </span>
@@ -202,11 +161,11 @@ function ManageCourse() {
               </span>
             </div>
 
-            <h1 className="max-w-[760px] text-[32px] font-semibold leading-[1.12] tracking-[-0.04em] text-[#111827] sm:text-[44px]">
+            <h1 className="max-w-[760px] text-[30px] font-semibold leading-[1.12] tracking-[-0.04em] text-[#111827] sm:text-[38px]">
               {course?.title}
             </h1>
 
-            <p className="mt-4 max-w-[720px] text-[18px] leading-[1.6] text-[#5F6B84]">
+            <p className="mt-4 max-w-[720px] text-[16px] leading-[1.6] text-[#5F6B84]">
               {course?.description}
             </p>
 
@@ -226,12 +185,12 @@ function ManageCourse() {
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-[260px]">
-            <div className="relative h-[180px] overflow-hidden rounded-[28px] shadow-md transition-all duration-300 ease-out hover:scale-105 hover:shadow-xl cursor-pointer">
+          <div className="mx-auto w-full max-w-[240px]">
+            <div className="relative h-[170px] overflow-hidden rounded-[28px] shadow-md transition-all duration-300 ease-out hover:scale-105 hover:shadow-xl cursor-pointer">
 
               {/* IMAGE */}
               <img
-                src={course?.image }
+                src={course?.image}
                 alt="Course Thumbnail"
                 className="h-full w-full object-cover"
               />
@@ -244,7 +203,7 @@ function ManageCourse() {
                 Course
               </div>
 
-              <div className="absolute left-4 top-[120px] rounded-full bg-white/95 px-4 py-1.5 text-[10px] font-semibold text-[#6557EF] shadow-sm">
+              <div className="absolute left-4 top-[114px] rounded-full bg-white/95 px-4 py-1.5 text-[10px] font-semibold text-[#6557EF] shadow-sm">
                 Preview Thumbnail
               </div>
 
@@ -252,41 +211,71 @@ function ManageCourse() {
           </div>
         </section>
 
-        <section className="mt-14 rounded-[30px] bg-white px-7 py-6 shadow-[0_10px_32px_rgba(17,24,39,0.04)] ring-1 ring-[#F0F2F7] sm:px-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-semibold uppercase tracking-[0.08em] text-[#8C97AE]">
-                Current Progress
-              </p>
-              <h2 className="mt-2 text-[25px] font-semibold tracking-[-0.03em] text-[#111827]">
-                7 / 12 lectures added
-              </h2>
-            </div>
+        {/* PROGRESS SECTION */}
+        <section className="mt-10 rounded-[30px] bg-white px-6 py-5 shadow-[0_10px_32px_rgba(17,24,39,0.04)] ring-1 ring-[#F0F2F7] sm:px-6">
 
-            <div className="flex items-center gap-2 self-start text-[16px] font-semibold text-[#4FB679] lg:self-auto">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#36C86B]" />
-              <span>Course is in Published</span>
-            </div>
-          </div>
+          {/* LOGIC */}
+          {(() => {
+            const totalLectures = 12; // later replace with course.totalLectures
+            const completedLectures = lectures.length;
 
-          <div className="mt-5 h-3 overflow-hidden rounded-full bg-[#ECDDFF]">
-            <div className="h-full w-[58%] rounded-full bg-[#6335F6]" />
-          </div>
+            const progressPercent = totalLectures
+              ? Math.round((completedLectures / totalLectures) * 100)
+              : 0;
+
+            return (
+              <>
+                {/* HEADER */}
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14px] font-semibold uppercase tracking-[0.08em] text-[#8C97AE]">
+                      Current Progress
+                    </p>
+
+                    <h2 className="mt-2 text-[25px] font-semibold tracking-[-0.03em] text-[#111827]">
+                      {completedLectures} / {totalLectures} lectures added
+                    </h2>
+                  </div>
+
+                  {/* STATUS */}
+                  <div className="flex items-center gap-2 self-start text-[16px] font-semibold text-[#4FB679] lg:self-auto">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#36C86B]" />
+                    <span>
+                      {progressPercent === 100
+                        ? "Course is Published"
+                        : "Course is in Progress"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* PROGRESS BAR */}
+                <div className="mt-5 h-3 overflow-hidden rounded-full bg-[#ECDDFF]">
+                  <div
+                    className="h-full rounded-full bg-[#6335F6]"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </>
+            );
+          })()}
+
         </section>
 
-        <section className="mt-14 grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+        {/* Lecture Management */}
+        <section className="mt-10 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-              <h2 className="text-[28px] font-semibold tracking-[-0.04em] text-[#111827]">
+              <h2 className="text-[24px] font-semibold tracking-[-0.04em] text-[#111827]">
                 Lecture Management
               </h2>
 
               <button
                 type="button"
-                className="inline-flex items-center gap-2 text-[22px] font-semibold tracking-[-0.03em] text-[#5A48F2]"
+                className="inline-flex items-center gap-2 text-[22px] font-semibold tracking-[-0.03em] text-[#5A48F2] transition-all duration-200 ease-out hover:shadow-[0_14px_32px_rgba(17,24,39,0.08)] hover:scale-[1.03]"
               >
-                <PlusCircleIcon />
-                <span>+ Add Lecture</span>
+                {/* <PlusCircleIcon /> */}
+                <span> + Add Lecture</span>
               </button>
             </div>
 
@@ -294,20 +283,20 @@ function ManageCourse() {
               {lectures.map((lecture) => (
                 <article
                   key={lecture.id}
-                  className="flex items-center gap-4 rounded-[24px] bg-white px-5 py-4 shadow-[0_10px_26px_rgba(17,24,39,0.04)] ring-1 ring-[#F2F3F7]"
+                  className="flex items-center gap-3 rounded-[24px] bg-white px-5 py-3 shadow-[0_10px_26px_rgba(17,24,39,0.04)] ring-1 ring-[#F2F3F7] transition-all duration-200 ease-out hover:shadow-[0_14px_32px_rgba(17,24,39,0.08)] hover:scale-[1.03]"
                 >
-                  <div className="flex shrink-0 items-center gap-4">
+                  <div className="flex shrink-0 items-center gap-3">
                     <div className="text-[#C8CEDD]">
                       <DotsGridIcon />
                     </div>
 
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F4F6FB] text-[#5446EE]">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F4F6FB] text-[#5446EE]">
                       {lecture.iconType === "text" ? <TextIcon /> : <PlayCircleIcon />}
                     </div>
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-[18px] font-semibold tracking-[-0.03em] text-[#1B2434]">
+                    <h3 className="truncate text-[16px] font-semibold tracking-[-0.03em] text-[#1B2434]">
                       {lecture.title}
                     </h3>
 
@@ -344,13 +333,24 @@ function ManageCourse() {
                       <MoreIcon />
                     </button>
                   </div>
+
+                  <span
+                    className={`text-xs font-semibold px-2 py-1 rounded-full ${lecture.status === "published"
+                      ? "bg-green-100 text-green-600"
+                      : lecture.status === "review"
+                        ? "bg-yellow-100 text-yellow-600"
+                        : "bg-gray-100 text-gray-500"
+                      }`}
+                  >
+                    {lecture.status}
+                  </span>
                 </article>
               ))}
             </div>
           </div>
 
-          <aside className="rounded-[30px] bg-[#FAFAFD] px-7 py-7 shadow-[0_10px_26px_rgba(17,24,39,0.04)] ring-1 ring-[#F1F2F6]">
-            <h2 className="text-[28px] font-semibold tracking-[-0.04em] text-[#1B2434]">
+          <aside className="rounded-[30px] bg-[#FAFAFD] px-6 py-6 shadow-[0_10px_26px_rgba(17,24,39,0.04)] ring-1 ring-[#F1F2F6]">
+            <h2 className="text-[24px] font-semibold tracking-[-0.04em] text-[#1B2434]">
               Course Settings
             </h2>
 
@@ -369,7 +369,7 @@ function ManageCourse() {
                   <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#B0B8CA]">
                     Status
                   </p>
-                  <div className="mt-2 inline-flex items-center gap-2 text-[18px] font-semibold text-[#45BB72]">
+                  <div className="mt-2 inline-flex items-center gap-2 text-[16px] font-semibold text-[#45BB72]">
                     <span className="h-2.5 w-2.5 rounded-full bg-[#37C86C]" />
                     <span>Published</span>
                   </div>
@@ -379,7 +379,7 @@ function ManageCourse() {
                   <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#B0B8CA]">
                     Category
                   </p>
-                  <p className="mt-2 text-[18px] font-semibold text-[#374151]">Design</p>
+                  <p className="mt-2 text-[16px] font-semibold text-[#374151]">Design</p>
                 </div>
               </div>
 
@@ -387,7 +387,7 @@ function ManageCourse() {
                 <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#B0B8CA]">
                   Last Updated
                 </p>
-                <div className="mt-2 inline-flex items-center gap-2 text-[18px] font-semibold text-[#4B5563]">
+                <div className="mt-2 inline-flex items-center gap-2 text-[16px] font-semibold text-[#4B5563]">
                   <span className="text-[#B6BECE]">
                     <CalendarIcon />
                   </span>
@@ -396,16 +396,16 @@ function ManageCourse() {
               </div>
             </div>
 
-            <div className="mt-14 space-y-4">
+            <div className="mt-10 space-y-4">
               <button
                 type="button"
-                className="w-full rounded-full border border-[#E1E5EF] bg-white px-6 py-4 text-[18px] font-semibold tracking-[-0.02em] text-[#374151]"
+                className="w-full rounded-full border border-[#E1E5EF] bg-white px-6 py-4 text-[16px] font-semibold tracking-[-0.02em] text-[#374151]"
               >
                 Course Analytics
               </button>
               <button
                 type="button"
-                className="w-full rounded-full border border-[#F4CDD3] bg-white px-6 py-4 text-[18px] font-semibold tracking-[-0.02em] text-[#E35C6B]"
+                className="w-full rounded-full border border-[#F4CDD3] bg-white px-6 py-4 text-[16px] font-semibold tracking-[-0.02em] text-[#E35C6B]"
               >
                 Unpublish Course
               </button>

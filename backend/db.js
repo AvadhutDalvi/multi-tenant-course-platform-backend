@@ -119,9 +119,14 @@ const purchaseschema = new Schema({
 
 const lectureschema = new Schema({
     title: { type: String, required: true },
-    videoUrl: { type: String, required: true },
-
+    
     description: { type: String },
+
+    status: {
+    type: String,
+    enum: ["draft", "review", "published"],
+    default: "draft",
+   },
 
     module: {
         type: String,
@@ -130,7 +135,7 @@ const lectureschema = new Schema({
 
     order: {
         type: Number,
-        required: true
+        default: 0
     },
 
     duration: {
