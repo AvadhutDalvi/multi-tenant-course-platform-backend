@@ -3,6 +3,7 @@ import api from "../../../services/api";
 
 export function useInstructorCourses() {
   const [courses, setCourses] = useState([]);
+  const [owner,setOwner]=useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -18,6 +19,7 @@ export function useInstructorCourses() {
         if (!isMounted) return;
 
         setCourses(res.data.courses || []);
+        setOwner(res.data.owner || "");
       } catch (err) {
         console.error(err);
         if (!isMounted) return;
@@ -35,5 +37,5 @@ export function useInstructorCourses() {
     };
   }, []);
 
-  return { courses, loading, error };
+  return { courses,owner, loading, error };
 }

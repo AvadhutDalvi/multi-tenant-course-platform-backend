@@ -6,11 +6,12 @@ import { useNavigate } from "react-router-dom";
 function InstructorDashboardPage() {
 
   const navigate = useNavigate();
-  const { courses, loading, error } = useInstructorCourses();
+  const { courses,owner, loading, error } = useInstructorCourses();
 
   if (loading) return null;
   if (error) return null;
 
+  
 
   const formattedCourses = courses.map((course) => ({
     title: course.title,
@@ -258,7 +259,8 @@ function InstructorDashboardPage() {
       <section className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <h1 className="text-[2.2rem] font-semibold tracking-tight text-slate-900">
-            Welcome back, Alex.
+            Welcome back, {owner}.
+          
           </h1>
           <p className="mt-2 text-sm text-slate-500">
             Your studio performance is up 12% this week. Keep creating.

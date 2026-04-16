@@ -12,6 +12,7 @@ import CourseLearn from "../pages/student/CourseLearn.jsx";
 import CreateCourse from "../pages/educator/CreateCourse.jsx";
 import CreateChannel from "../pages/educator/CreateChannel.jsx";
 import ManageCourse from "../pages/educator/ManageCourse.jsx";
+import AddLecture from "../pages/educator/AddLecture.jsx";
 
 function AppRoutes() {
   return (
@@ -35,6 +36,8 @@ function AppRoutes() {
         <Route path="educator/manage-course/:courseId" element={<ManageCourse />} />
         <Route path="create-channel" element={<CreateChannel />} />
         <Route path="course/:courseId" element={<CourseLearn />} />
+
+        <Route path="educator/add-lecture/:courseId" element={<AddLecture />}/>
         <Route path="search" element={<SearchChannelsPage />} />
         <Route path="channel/:slug" element={<ChannelPage />} />
       </Route>

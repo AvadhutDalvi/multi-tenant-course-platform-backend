@@ -1,5 +1,6 @@
-import { useParams } from "react-router-dom";
+import { useParams,useNavigate } from "react-router-dom";
 import api from "../../services/api";
+
 
 import { useState, useEffect } from "react";
 
@@ -110,6 +111,8 @@ function ManageCourse() {
 
   const [course, setCourse] = useState(null);
   const [lectures, setLectures] = useState([]);;
+
+  const navigate=useNavigate();
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -272,6 +275,7 @@ function ManageCourse() {
 
               <button
                 type="button"
+                onClick={()=>navigate(`/dashboard/educator/add-lecture/${courseId}`)}
                 className="inline-flex items-center gap-2 text-[22px] font-semibold tracking-[-0.03em] text-[#5A48F2] transition-all duration-200 ease-out hover:shadow-[0_14px_32px_rgba(17,24,39,0.08)] hover:scale-[1.03]"
               >
                 {/* <PlusCircleIcon /> */}

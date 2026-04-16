@@ -70,10 +70,12 @@ UserRouter.post("/login", async function (req, res) {
             message: "Incorrect password"
         });
     }
-
+    
+    console.log(user.firstname);
     const token = jwt.sign({
         id: user._id.toString(),
-        role: user.role
+        role: user.role,
+        name: user.firstname
     }, user_jwt_pass);
 
     res.json({

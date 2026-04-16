@@ -8,6 +8,7 @@ const { uploadLectureFiles } = require("../middleware/upload");
 const {uploadLectureToCloudinary}=require("../utils/cloudinaryUploadLecture")
 const { uploadCourseImage } =require("../middleware/upload.js");
 const { uploadToCloudinary } =require("../utils/cloudinaryUpload.js");
+const {createLecture} =require("../utils/CreateLecture.js");
 
 
 // Consolidated LMS data for a course
@@ -218,59 +219,9 @@ CourseRouter.post(
     "/:courseId/lecture",
     authMiddleware,
     roleMiddleware("educator"),
-    async function (req, res) {
-
-        try {
-            const { courseId } = req.params;
-            const { title, videoUrl } = req.body;
-
-            if (!title || typeof title !== "string" || !title.trim()) {
-                return res.status(400).json({
-                    message: "Lecture title is required"
-                });
-            }
-
-            // 1️⃣ Verify course ownership (via channel)
-            const course = await coursemodel.findById(courseId);
-            if (!course) {
-                return res.status(404).json({ message: "Course not found" });
-            }
-            const channel = await channelmodel.findById(course.channel);
-            if (!channel || channel.owner.toString() !== req.user.id) {
-                return res.status(403).json({
-                    message: "You cannot add lecture to this course"
-                });
-            }
-
-            // 2️⃣ Create lecture
-            const lecture = await lecturemodel.create({
-                title,
-                videoUrl,
-                course: courseId
-            });
-
-            // add lecture to course lectures array
-            course.lectures.push(lecture._id);
-
-            await course.save();
-
-            // 3️⃣ Return updated lectures (fetch without populate to avoid strictPopulate issues)
-            const lectures = await lecturemodel
-                .find({ course: courseId })
-                .sort({ createdAt: 1 })
-                .lean();
-
-            res.json({
-                message: "Lecture added successfully",
-                lectures
-            });
-
-        } catch (error) {
-            res.status(500).json({
-                message: error.message
-            });
-        }
-    }
+    uploadLectureFiles,
+    uploadLectureToCloudinary,
+    createLecture
 );
 
 // update lecture (educator only, course + lecture ownership validated)
@@ -577,6 +528,8 @@ CourseRouter.get(
         channel: channel._id
       });
 
+
+
       const enrichedCourses = await Promise.all(
         courses.map(async (course) => {
           const students = await purchasemodel.countDocuments({
@@ -590,7 +543,6 @@ CourseRouter.get(
             title: course.title,
             description: course.description,
             price: course.price,
-
             status: course.status || "draft",
             students,
             revenue,
@@ -599,7 +551,9 @@ CourseRouter.get(
         })
       );
 
-      res.json({ courses: enrichedCourses });
+      res.json({ courses: enrichedCourses,
+        owner: req.user.name,
+       });
 
     } catch (error) {
       res.status(500).json({
