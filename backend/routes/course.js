@@ -5,10 +5,10 @@ const { coursemodel, purchasemodel, lecturemodel, progressmodel, channelmodel } 
 const { authMiddleware, roleMiddleware } = require("../middleware/auth");
 const cloudinary = require("../cloudinary");
 const { uploadLectureFiles } = require("../middleware/upload");
-const {uploadLectureToCloudinary}=require("../utils/cloudinaryUploadLecture")
-const { uploadCourseImage } =require("../middleware/upload.js");
-const { uploadToCloudinary } =require("../utils/cloudinaryUpload.js");
-const {createLecture} =require("../utils/CreateLecture.js");
+const { uploadLectureToCloudinary } = require("../utils/cloudinaryUploadLecture")
+const { uploadCourseImage } = require("../middleware/upload.js");
+const { uploadToCloudinary } = require("../utils/cloudinaryUpload.js");
+const { createLecture } = require("../utils/CreateLecture.js");
 
 
 // Consolidated LMS data for a course
@@ -329,70 +329,70 @@ CourseRouter.delete(
 
 //enrolled
 CourseRouter.get(
-  "/enrolled",
-  authMiddleware,
-  roleMiddleware("student"),
-  async function (req, res) {
-    try {
-      const userId = req.user.id;
+    "/enrolled",
+    authMiddleware,
+    roleMiddleware("student"),
+    async function (req, res) {
+        try {
+            const userId = req.user.id;
 
-      // 1. Get purchased courses
-      const purchases = await purchasemodel.find({
-        student: userId
-      }).populate("course");
+            // 1. Get purchased courses
+            const purchases = await purchasemodel.find({
+                student: userId
+            }).populate("course");
 
-      // 2. Get progress data
-      const progressData = await progressmodel.find({
-        student: userId
-      });
+            // 2. Get progress data
+            const progressData = await progressmodel.find({
+                student: userId
+            });
 
-      // 3. Convert progress to map (fast lookup)
-      const progressMap = new Map();
+            // 3. Convert progress to map (fast lookup)
+            const progressMap = new Map();
 
-      progressData.forEach(p => {
-        progressMap.set(p.course.toString(), p);
-      });
+            progressData.forEach(p => {
+                progressMap.set(p.course.toString(), p);
+            });
 
-      // 4. Merge everything
-      const enrolledCourses = await Promise.all(
-        purchases.map(async (p) => {
-          const course = p.course;
+            // 4. Merge everything
+            const enrolledCourses = await Promise.all(
+                purchases.map(async (p) => {
+                    const course = p.course;
 
-          const progress = progressMap.get(course._id.toString());
+                    const progress = progressMap.get(course._id.toString());
 
-          // count lectures
-          const totalLectures = await lecturemodel.countDocuments({
-            course: course._id
-          });
+                    // count lectures
+                    const totalLectures = await lecturemodel.countDocuments({
+                        course: course._id
+                    });
 
-          return {
-            _id: course._id,
-            title: course.title,
-            description: course.description,
-            price: course.price,
-            instructor: course.owner,
-            image: course.image,
-            // 🔥 NEW DATA
-            progress: progress?.percentage || 0,
-            completedLectures: progress?.completedLectures.length || 0,
-            totalLectures: totalLectures,
- 
-            
-          };
-        })
-      );
+                    return {
+                        _id: course._id,
+                        title: course.title,
+                        description: course.description,
+                        price: course.price,
+                        instructor: course.owner,
+                        image: course.image,
+                        // 🔥 NEW DATA
+                        progress: progress?.percentage || 0,
+                        completedLectures: progress?.completedLectures.length || 0,
+                        totalLectures: totalLectures,
 
-      res.json({
-        courses: enrolledCourses
-      });
 
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({
-        message: "Failed to fetch enrolled courses"
-      });
+                    };
+                })
+            );
+
+            res.json({
+                courses: enrolledCourses
+            });
+
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({
+                message: "Failed to fetch enrolled courses"
+            });
+        }
     }
-  }
 );
 
 //purchase
@@ -459,143 +459,151 @@ CourseRouter.post(
 
 
 CourseRouter.post(
-  "/create",
-  authMiddleware,
-  roleMiddleware("educator"),
-  uploadCourseImage, // 👈 multer middleware
-  async function (req, res) {
-    const { title, description, price } = req.body;
+    "/create",
+    authMiddleware,
+    roleMiddleware("educator"),
+    uploadCourseImage, // 👈 multer middleware
+    async function (req, res) {
+        const { title, description, price } = req.body;
 
-    try {
-      // 🔒 Check educator channel
-      const channel = await channelmodel.findOne({ owner: req.user.id });
-      if (!channel) {
-        return res.status(400).json({
-          message: "You must create a channel before creating courses"
-        });
-      }
+        try {
+            // 🔒 Check educator channel
+            const channel = await channelmodel.findOne({ owner: req.user.id });
+            if (!channel) {
+                return res.status(400).json({
+                    message: "You must create a channel before creating courses"
+                });
+            }
 
-      // 🖼️ Default thumbnail
-      let imageURL = "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg";
+            // 🖼️ Default thumbnail
+            let imageURL = "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg";
 
-      // ☁️ Upload image if provided
-      if (req.file) {
-        const result = await uploadToCloudinary(req.file, "courses");
-        image = result.url;
-      }
+            // ☁️ Upload image if provided
+            if (req.file) {
+                const result = await uploadToCloudinary(req.file, "courses");
+                image = result.url;
+            }
 
-      // 💾 Create course
-      const course = await coursemodel.create({
-        title,
-        description,
-        price,
-        image:imageURL,
-        channel: channel._id
-      });
+            // 💾 Create course
+            const course = await coursemodel.create({
+                title,
+                description,
+                price,
+                image: imageURL,
+                channel: channel._id
+            });
 
-      // 📤 Response
-      res.json({
-        message: "Course created successfully",
-        courseId: course._id
-      });
+            // 📤 Response
+            res.json({
+                message: "Course created successfully",
+                courseId: course._id
+            });
 
-    } catch (err) {
-      console.error("Create Course Error:", err);
+        } catch (err) {
+            console.error("Create Course Error:", err);
 
-      res.status(500).json({
-        message: err.message || "Error creating course"
-      });
+            res.status(500).json({
+                message: err.message || "Error creating course"
+            });
+        }
     }
-  }
 );
 
 // get courses created by the educator (via their channel)
 CourseRouter.get(
-  "/creator",
-  authMiddleware,
-  roleMiddleware("educator"),
-  async function (req, res) {
-    try {
-      const channel = await channelmodel.findOne({
-        owner: req.user.id
-      });
+    "/creator",
+    authMiddleware,
+    roleMiddleware("educator"),
+    async function (req, res) {
+        try {
+            const channel = await channelmodel.findOne({
+                owner: req.user.id
+            });
 
-      if (!channel) {
-        return res.json({ courses: [] });
-      }
+            if (!channel) {
+                return res.json({ courses: [] });
+            }
 
-      const courses = await coursemodel.find({
-        channel: channel._id
-      });
+            const courses = await coursemodel.find({
+                channel: channel._id
+            });
 
 
 
-      const enrichedCourses = await Promise.all(
-        courses.map(async (course) => {
-          const students = await purchasemodel.countDocuments({
-            course: course._id
-          });
+            const enrichedCourses = await Promise.all(
+                courses.map(async (course) => {
+                    const students = await purchasemodel.countDocuments({
+                        course: course._id
+                    });
 
-          const revenue = students * course.price;
+                    const revenue = students * course.price;
 
-          return {
-            _id: course._id,
-            title: course.title,
-            description: course.description,
-            price: course.price,
-            status: course.status || "draft",
-            students,
-            revenue,
-            rating: 4.5 // placeholder for now
-          };
-        })
-      );
+                    return {
+                        _id: course._id,
+                        title: course.title,
+                        description: course.description,
+                        price: course.price,
+                        status: course.status || "draft",
+                        students,
+                        revenue,
+                        rating: 4.5 // placeholder for now
+                    };
+                })
+            );
 
-      res.json({ courses: enrichedCourses,
-        owner: req.user.name,
-       });
+            res.json({
+                courses: enrichedCourses,
+                owner: req.user.name,
+            });
 
-    } catch (error) {
-      res.status(500).json({
-        message: error.message || "Error fetching educator courses"
-      });
+        } catch (error) {
+            res.status(500).json({
+                message: error.message || "Error fetching educator courses"
+            });
+        }
     }
-  }
 );
 
-CourseRouter.get("/:courseId", authMiddleware, async (req, res) => {
-    try {
-        const { courseId } = req.params;
+CourseRouter.get("/:courseId",
+    authMiddleware,
+    roleMiddleware("educator"),
+    async (req, res) => {
+        try {
+            const { courseId } = req.params;
 
-        if (!mongoose.Types.ObjectId.isValid(courseId)) {
-            return res.status(400).json({
-                message: "Invalid course ID"
-            });
-        }
-
-        const course = await coursemodel.findById(courseId).lean();
-        if (!course) {
-            return res.status(404).json({
-                message: "Course not found"
-            });
-        }
-
-        // Fetch lectures separately (no populate — avoids strictPopulate error)
-        const lectures = await lecturemodel
-            .find({ course: courseId })
-            .sort({ createdAt: 1 })
-            .lean();
-
-        res.json({
-            course: {
-                ...course,
-                lectures
+            if (!mongoose.Types.ObjectId.isValid(courseId)) {
+                return res.status(400).json({
+                    message: "Invalid course ID"
+                });
             }
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+
+            const course = await coursemodel.findById(courseId).lean();
+            if (!course) {
+                return res.status(404).json({
+                    message: "Course not found"
+                });
+            }
+
+            // Fetch lectures separately (no populate — avoids strictPopulate error)
+            const lectures = await lecturemodel
+                .find({ course: courseId })
+                .sort({ createdAt: 1 })
+                .lean();
+
+            
+
+           
+
+            res.json({
+                course: {
+                    ...course,
+                    lectures
+                }
+            });
+        } catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    });
 
 //all
 CourseRouter.get("/all", async function (req, res) {
@@ -605,7 +613,33 @@ CourseRouter.get("/all", async function (req, res) {
 
 
 
+//get data of lecture by :lectureid
+CourseRouter.get(
+    "/lecture/:lectureId",
+    authMiddleware,
+    roleMiddleware("educator"),
+    async (req, res) => {
+        try {
+            const { lectureId } = req.params;
+           
+            const lecture = await lecturemodel.findById(lectureId);
 
+            if (!lecture) {
+                return res.status(404).json({
+                    message: "Lecture not found"
+                });
+            }
+            
+            
+            res.json({ lecture });
+
+        } catch (error) {
+            res.status(500).json({
+                message: error.message
+            });
+        }
+    }
+);
 
 
 module.exports = {

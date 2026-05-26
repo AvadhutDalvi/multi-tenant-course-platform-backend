@@ -2,6 +2,7 @@ import { useParams,useNavigate } from "react-router-dom";
 import api from "../../services/api";
 
 
+
 import { useState, useEffect } from "react";
 
 
@@ -125,7 +126,7 @@ function ManageCourse() {
 
         const data = res.data;
 
-        console.log("API RESPONSE:", data);
+       
 
         if (data.course) {
           setCourse(data.course);
@@ -142,12 +143,13 @@ function ManageCourse() {
     }
   }, [courseId]);
 
-  console.log(courseId);
+
   if (!course) {
     return <div className="p-6">Loading course...</div>;
   }
 
-  console.log(course);
+
+ 
 
   return (
     <div className="min-h-screen bg-[#fbfbfe] px-4 py-5 sm:px-6 lg:px-8">
@@ -319,13 +321,18 @@ function ManageCourse() {
                       type="button"
                       className="flex items-center items-center justify-center rounded-xl text-[#5C667E] transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:shadow-md active:scale-95"
                       aria-label={`Preview ${lecture.title}`}
-                    >
+                      >
+                      
                       <EyeIcon />
                     </button>
                     <button
                       type="button"
                       className={`flex items-center items-center justify-center rounded-xl ${lecture.editColor} transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:shadow-md active:scale-95`}
                       aria-label={`Edit ${lecture.title}`}
+                      
+                      onClick={()=>{
+                        
+                        navigate(`/dashboard/educator/edit-lecture/${lecture._id}`)}}
                     >
                       <PencilIcon />
                     </button>

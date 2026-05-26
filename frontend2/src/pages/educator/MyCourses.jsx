@@ -122,7 +122,7 @@ function SummaryCard({ card }) {
 
 function CourseCard({ course }) {
 
-  console.log(course.id);
+ 
   const navigate=useNavigate();
   return (
     <article className="grid gap-5 rounded-[30px] bg-white p-5 shadow-sm shadow-slate-200/70 md:grid-cols-[130px_minmax(0,1fr)_110px] md:items-center">
