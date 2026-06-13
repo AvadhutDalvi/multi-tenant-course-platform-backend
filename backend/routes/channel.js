@@ -146,7 +146,7 @@ ChannelRouter.get(
                 return res.status(404).json({ message: "Channel not found" });
             }
             const courses = await coursemodel
-                .find({ channel: channel._id })
+                .find({ channel: channel._id,status: "published"  })
                 .lean();
             res.json({ courses });
         } catch (err) {
@@ -168,7 +168,7 @@ ChannelRouter.get(
                 return res.status(404).json({ message: "Channel not found" });
             }
             const courses = await coursemodel
-                .find({ channel: channel._id })
+                .find({ channel: channel._id ,status: "published" })
                 .lean();
             res.json({
                 channel: {

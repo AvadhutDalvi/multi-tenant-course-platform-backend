@@ -2,7 +2,7 @@ const { Router } = require("express");
 const mongoose = require("mongoose");
 const CourseRouter = Router();
 const { coursemodel, purchasemodel, lecturemodel, progressmodel, channelmodel } = require("../db");
-const { authMiddleware, roleMiddleware } = require("../middleware/auth");
+const { authMiddleware, roleMiddleware,requireCourseOwner,requireLectureOwner,requireCourseEnrollment} = require("../middleware/auth");
 const cloudinary = require("../cloudinary");
 const { uploadLectureFiles } = require("../middleware/upload");
 const { uploadLectureToCloudinary } = require("../utils/cloudinaryUploadLecture")
@@ -22,16 +22,7 @@ async function learnCourse(req, res) {
         }
 
         // 1️⃣ Verify enrollment via progress document
-        const progress = await progressmodel.findOne({
-            student: studentId,
-            course: courseId
-        });
-
-        if (!progress) {
-            return res.status(403).json({
-                message: "Not enrolled in this course"
-            });
-        }
+        const progress = req.progess;
 
         // 2️⃣ Fetch course
         const courseDoc = await coursemodel.findById(courseId).lean();
@@ -117,27 +108,23 @@ CourseRouter.get(
     "/:courseId/progress",
     authMiddleware,
     roleMiddleware("student"),
+    requireCourseEnrollment,
     async function (req, res) {
 
         const { courseId } = req.params;
 
-        const progress = await progressmodel.findOne({
-            student: req.user.id,
-            course: courseId
-        });
-
-        if (!progress) {
-            return res.status(403).json({
-                message: "Not enrolled in this course"
-            });
+        if (!mongoose.Types.ObjectId.isValid(courseId)) {
+            return res.status(400).json({ message: "Invalid course ID" });
         }
+
+        const progress =req.progress;
 
         const totalLectures = await lecturemodel.countDocuments({
             course: courseId
         });
 
         const updatedPercentage =
-            (progress.completedLectures.length / totalLectures) * 100;
+            totalLectures === 0 ? 0 : (progress.completedLectures.length / totalLectures) * 100;
 
         res.json({
             completedLectures: progress.completedLectures.length,
@@ -152,6 +139,7 @@ CourseRouter.get(
     "/:courseId/learn",
     authMiddleware,
     roleMiddleware("student"),
+    requireCourseEnrollment,
     learnCourse
 );
 
@@ -160,21 +148,23 @@ CourseRouter.post(
     "/:courseId/lecture/:lectureId/complete",
     authMiddleware,
     roleMiddleware("student"),
+    requireCourseEnrollment,
     async function (req, res) {
 
         const { courseId, lectureId } = req.params;
 
-        // 1️⃣ Find progress
-        const progress = await progressmodel.findOne({
-            student: req.user.id,
+        //check the lecture belong to this course
+        const lecture = await lecturemodel.findOne({
+            _id: lectureId,
             course: courseId
         });
 
-        if (!progress) {
-            return res.status(403).json({
-                message: "You are not enrolled in this course"
-            });
+        if (!lecture) {
+            return res.status(404).json({ message: "Lecture not found in this course" });
         }
+
+        // 1️⃣ Find progress
+        const progress = req.progress;
 
         // 2️⃣ Prevent duplicate completion
         if (progress.completedLectures.includes(lectureId)) {
@@ -210,6 +200,8 @@ CourseRouter.post(
     "/:courseId/lecture/upload",
     authMiddleware,
     roleMiddleware("educator"),
+    requireCourseOwner,
+    requireCourseOwner,
     uploadLectureFiles,
     uploadLectureToCloudinary
 );
@@ -219,6 +211,7 @@ CourseRouter.post(
     "/:courseId/lecture",
     authMiddleware,
     roleMiddleware("educator"),
+    requireCourseOwner,
     uploadLectureFiles,
     uploadLectureToCloudinary,
     createLecture
@@ -229,6 +222,7 @@ CourseRouter.put(
     "/:courseId/lecture/:lectureId",
     authMiddleware,
     roleMiddleware("educator"),
+    requireCourseOwner,
     async function (req, res) {
         try {
             const { courseId, lectureId } = req.params;
@@ -284,6 +278,7 @@ CourseRouter.delete(
     "/:courseId/lecture/:lectureId",
     authMiddleware,
     roleMiddleware("educator"),
+    requireCourseOwner,
     async function (req, res) {
         try {
             const { courseId, lectureId } = req.params;
@@ -292,11 +287,11 @@ CourseRouter.delete(
                 return res.status(400).json({ message: "Invalid course or lecture ID" });
             }
 
-            const course = await coursemodel.findById(courseId);
+            const course = req.course;
             if (!course) {
                 return res.status(404).json({ message: "Course not found" });
             }
-            const channel = await channelmodel.findById(course.channel);
+            const channel = req.channel;
             if (!channel || channel.owner.toString() !== req.user.id) {
                 return res.status(403).json({ message: "You cannot delete lectures from this course" });
             }
@@ -412,6 +407,11 @@ CourseRouter.post(
                 return res.status(404).json({
                     message: "Course not found"
                 });
+            }
+
+            //check is avaible to purchase
+            if (course.status !== "published") {
+                return res.status(403).json({ message: "Course is not available for purchase" });
             }
 
             // 2️⃣ Check duplicate purchase
@@ -564,9 +564,18 @@ CourseRouter.get(
     }
 );
 
+
+
+//all
+CourseRouter.get("/all", async function (req, res) {
+    const courses = await coursemodel.find({ status: "published" });
+    res.json({ courses });
+});
+
 CourseRouter.get("/:courseId",
     authMiddleware,
     roleMiddleware("educator"),
+    requireCourseOwner,
     async (req, res) => {
         try {
             const { courseId } = req.params;
@@ -584,15 +593,22 @@ CourseRouter.get("/:courseId",
                 });
             }
 
+            //validate the course owner is the the logged educator
+            const channel = await channelmodel.findById(course.channel);
+
+            if (!channel || channel.owner.toString() !== req.user.id) {
+                return res.status(403).json({ message: "Access denied" });
+            }
+
             // Fetch lectures separately (no populate — avoids strictPopulate error)
             const lectures = await lecturemodel
                 .find({ course: courseId })
                 .sort({ createdAt: 1 })
                 .lean();
 
-            
 
-           
+
+
 
             res.json({
                 course: {
@@ -605,32 +621,28 @@ CourseRouter.get("/:courseId",
         }
     });
 
-//all
-CourseRouter.get("/all", async function (req, res) {
-    const courses = await coursemodel.find({});
-    res.json({ courses });
-});
-
-
 
 //get data of lecture by :lectureid
 CourseRouter.get(
     "/lecture/:lectureId",
     authMiddleware,
     roleMiddleware("educator"),
+    
     async (req, res) => {
         try {
             const { lectureId } = req.params;
-           
-            const lecture = await lecturemodel.findById(lectureId);
 
-            if (!lecture) {
-                return res.status(404).json({
-                    message: "Lecture not found"
-                });
+            const lecture = await lecturemodel.findById(lectureId);
+            if (!lecture) return res.status(404).json({ message: "Lecture not found" });
+
+            const course = await coursemodel.findById(lecture.course);
+            if (!course) return res.status(404).json({ message: "Course not found" });
+
+            const channel = await channelmodel.findById(course.channel);
+            if (!channel || channel.owner.toString() !== req.user.id) {
+                return res.status(403).json({ message: "Access denied" });
             }
-            
-            
+
             res.json({ lecture });
 
         } catch (error) {

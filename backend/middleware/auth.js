@@ -1,5 +1,8 @@
 const jwt = require("jsonwebtoken");
-const { user_jwt_pass } = require("../routes/user");
+const { coursemodel, purchasemodel, lecturemodel, progressmodel, channelmodel } = require("../db");
+
+user_jwt_pass=process.env.user_jwt_pass;
+admin_jwt_pass=process.env.admin_jwt_pass;
 
 function authMiddleware(req, res, next) {
 
@@ -41,7 +44,63 @@ function roleMiddleware(requiredRole) {
     };
 }
 
+async function requireCourseOwner(req, res, next) {
+  const { courseId } = req.params;
+
+  const course = await coursemodel.findById(courseId);
+  if (!course) {
+    return res.status(404).json({ message: "Course not found" });
+  }
+
+  const channel = await channelmodel.findById(course.channel);
+  if (!channel || channel.owner.toString() !== req.user.id) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  req.course = course;
+  req.channel = channel;
+  next();
+}
+
+async function requireLectureOwner(req, res, next) {
+  const { lectureId } = req.params;
+
+  const lecture = await lecturemodel.findById(lectureId);
+  if (!lecture) {
+    return res.status(404).json({ message: "Lecture not found" });
+  }
+
+  const course = await coursemodel.findById(lecture.course);
+  const channel = course ? await channelmodel.findById(course.channel) : null;
+
+  if (!channel || channel.owner.toString() !== req.user.id) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  req.lecture = lecture;
+  req.course = course;
+  req.channel = channel;
+  next();
+}
+
+async function requireCourseEnrollment(req, res, next) {
+  const progress = await progressmodel.findOne({
+    student: req.user.id,
+    course: req.params.courseId
+  });
+
+  if (!progress) {
+    return res.status(403).json({ message: "Not enrolled in this course" });
+  }
+
+  req.progress = progress;
+  next();
+}
+
 module.exports = {
     authMiddleware,
-    roleMiddleware
+    roleMiddleware,
+    requireCourseOwner,
+    requireLectureOwner,
+    requireCourseEnrollment
 };

@@ -2,7 +2,7 @@ const { Router } = require("express")
 
 const adminRouter = Router();
 const { adminmodel, coursemodel } = require("../db")
-const { adminmiddleware } = require("../middleware/admin.js")
+const { authMiddleware, roleMiddleware } = require("../middleware/auth.js")
 const { z } = require("zod");
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken");
@@ -66,7 +66,7 @@ adminRouter.post("/login", async function (req, res) {
             const check = await bcrypt.compare(password, user.password);
             if (!check) {
                 res.json({
-                    message:"password incorrect...."
+                    message: "password incorrect...."
                 });
                 return;
             }
@@ -80,66 +80,75 @@ adminRouter.post("/login", async function (req, res) {
         }, admin_jwt_pass)
 
         res.json({
-            token:token
+            token: token
         });
     }
 })
 
-adminRouter.post("/course", adminmiddleware, async function (req, res) {
-    const creatorId = req.userId;
+adminRouter.post("/course",
+    authMiddleware,
+    roleMiddleware("admin"),
+    async function (req, res) {
+        const creatorId = req.userId;
 
-    const { title, description, price, imageURL } = req.body;
+        const { title, description, price, imageURL } = req.body;
 
-    const course = await coursemodel.create({
-        title: title,
-        description: description,
-        price: price,
-        imageURL: imageURL,
-        creatorId: creatorId
-    })
+        const course = await coursemodel.create({
+            title: title,
+            description: description,
+            price: price,
+            imageURL: imageURL,
+            creatorId: creatorId
+        })
 
-    res.json({
-        message: "course created....",
-        courseId: course._id
-    })
-
-})
-
-
-
-adminRouter.put("/course", adminmiddleware, async function (req, res) {
-
-    const creatorId = req.userId;
-
-    const { title, description, price, imageURL, courseId } = req.body;
-
-    const course = await coursemodel.updateOne({
-        _id: courseId,
-        creatorId: creatorId
-    }, {
-        title: title,
-        description: description,
-        price: price,
-        imageURL: imageURL,
-
-    })
-
-    res.json({
-        message: "course updated....",
-        courseId: course._id
-    })
-
+        res.json({
+            message: "course created....",
+            courseId: course._id
+        })
 
 })
 
-adminRouter.post("/course/bulk", adminmiddleware, async function (req, res) {
-    const creatorId = req.userId;
 
-    const courses = await coursemodel.find({
-        creatorId: creatorId
-    })
 
-    res.json(courses);
+adminRouter.put("/course",
+    authMiddleware,
+    roleMiddleware("admin")
+    , async function (req, res) {
+
+        const creatorId = req.userId;
+
+        const { title, description, price, imageURL, courseId } = req.body;
+
+        const course = await coursemodel.updateOne({
+            _id: courseId,
+            creatorId: creatorId
+        }, {
+            title: title,
+            description: description,
+            price: price,
+            imageURL: imageURL,
+
+        })
+
+        res.json({
+            message: "course updated....",
+            courseId: course._id
+        })
+
+
+})
+
+adminRouter.post("/course/bulk",
+    authMiddleware,
+    roleMiddleware("admin"),
+    async function (req, res) {
+        const creatorId = req.userId;
+
+        const courses = await coursemodel.find({
+            creatorId: creatorId
+        })
+
+        res.json(courses);
 })
 
 module.exports = {

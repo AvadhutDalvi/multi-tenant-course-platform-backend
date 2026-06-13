@@ -1,4 +1,6 @@
- export const createLecture = async (req, res) =>{
+ const { coursemodel, channelmodel, lecturemodel } = require("../db");
+ 
+ async function createLecture(req, res){
   try {
     const { courseId } = req.params;
 
@@ -107,3 +109,5 @@
     });
   }
 }
+
+module.exports = { createLecture };

@@ -6,7 +6,11 @@ const { usermodel, purchasemodel } = require("../db");
 const { z } = require("zod");
 const bcrypt=require("bcryptjs")
 const jwt=require("jsonwebtoken");
-const user_jwt_pass="user@321"
+
+
+
+user_jwt_pass=process.env.user_jwt_pass;
+admin_jwt_pass=process.env.admin_jwt_pass;
 
 
 UserRouter.post("/signup", async function (req, res) {
@@ -71,12 +75,15 @@ UserRouter.post("/login", async function (req, res) {
         });
     }
     
-    console.log(user.firstname);
+    //console.log(user.firstname);
     const token = jwt.sign({
         id: user._id.toString(),
         role: user.role,
         name: user.firstname
-    }, user_jwt_pass);
+    }, user_jwt_pass,
+    {
+        expiresIn: "7d"
+    });
 
     res.json({
         token
