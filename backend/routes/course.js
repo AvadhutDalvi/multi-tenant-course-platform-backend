@@ -232,14 +232,8 @@ CourseRouter.put(
                 return res.status(400).json({ message: "Invalid course or lecture ID" });
             }
 
-            const course = await coursemodel.findById(courseId);
-            if (!course) {
-                return res.status(404).json({ message: "Course not found" });
-            }
-            const channel = await channelmodel.findById(course.channel);
-            if (!channel || channel.owner.toString() !== req.user.id) {
-                return res.status(403).json({ message: "You cannot edit lectures in this course" });
-            }
+            const course = req.course;
+            const channel = req.channel;
 
             const lecture = await lecturemodel.findOne({
                 _id: lectureId,
@@ -481,7 +475,7 @@ CourseRouter.post(
             // ☁️ Upload image if provided
             if (req.file) {
                 const result = await uploadToCloudinary(req.file, "courses");
-                image = result.url;
+                imageURL = result.url;
             }
 
             // 💾 Create course
@@ -586,19 +580,10 @@ CourseRouter.get("/:courseId",
                 });
             }
 
-            const course = await coursemodel.findById(courseId).lean();
-            if (!course) {
-                return res.status(404).json({
-                    message: "Course not found"
-                });
-            }
+            const course = req.course;
 
             //validate the course owner is the the logged educator
-            const channel = await channelmodel.findById(course.channel);
-
-            if (!channel || channel.owner.toString() !== req.user.id) {
-                return res.status(403).json({ message: "Access denied" });
-            }
+            const channel = req.channel;
 
             // Fetch lectures separately (no populate — avoids strictPopulate error)
             const lectures = await lecturemodel
