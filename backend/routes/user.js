@@ -9,8 +9,8 @@ const jwt=require("jsonwebtoken");
 
 
 
-user_jwt_pass=process.env.user_jwt_pass;
 admin_jwt_pass=process.env.admin_jwt_pass;
+user_jwt_pass=process.env.user_jwt_pass;
 
 
 UserRouter.post("/signup", async function (req, res) {

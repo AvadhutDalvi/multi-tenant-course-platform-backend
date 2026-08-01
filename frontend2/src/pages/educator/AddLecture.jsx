@@ -9,7 +9,7 @@ const createMaterial = (id) => ({
   id,
   title: "",
   file: null,
-  url: "",
+
 });
 
 function AddLecture() {
@@ -26,12 +26,12 @@ function AddLecture() {
     videoUrl: null,
     duration: "",
     thumbnail: null,
-    thumbnailUrl:null,
+    thumbnailUrl: null,
     materials: [createMaterial(1)],
     practiceSheet: {
       title: "",
       file: null,
-      url: "",
+
     },
   });
   const [isDurationEditable, setIsDurationEditable] = useState(false);
@@ -162,16 +162,43 @@ function AddLecture() {
         formDataToSend.append("thumbnailUrl", formData.thumbnailUrl);
       }
 
+
       // 🔹 MATERIALS
-      formData.materials.forEach((mat) => {
-        if (mat.file) {
-          formDataToSend.append("materials", mat.file);
-        }
+      const validMaterials = formData.materials.filter((material) => material.file);
+      const hasMissingTitle = validMaterials.some(
+        (material) => !(material.title || "").trim()
+      );
+
+      if (hasMissingTitle) {
+        alert("Please enter a title for every uploaded material.");
+        return;
+      }
+      // Upload material files
+      validMaterials.forEach((material) => {
+        formDataToSend.append("materials", material.file);
       });
+
+      // Upload material metadata
+      formDataToSend.append(
+        "materialsMeta",
+        JSON.stringify(
+          validMaterials.map((material) => ({
+            title: material.title,
+          }))
+        )
+      );
 
       // 🔹 PRACTICE SHEET
       if (formData.practiceSheet.file) {
-        formDataToSend.append("practiceSheet", formData.practiceSheet.file);
+        formDataToSend.append(
+          "practiceSheet",
+          formData.practiceSheet.file
+        );
+
+        formDataToSend.append(
+          "practiceSheetTitle",
+          formData.practiceSheet.title
+        );
       }
 
       const res = await api.post(
@@ -248,6 +275,7 @@ function AddLecture() {
             <button
               type="button"
               className="rounded-full border border-[#E2E7F2] bg-white px-6 py-3 text-[15px] font-semibold text-[#4B5563] transition hover:border-[#CDD5E5] hover:shadow-[0_10px_24px_rgba(17,24,39,0.05)]"
+              onClick={() => navigate(-1)}
             >
               Cancel
             </button>

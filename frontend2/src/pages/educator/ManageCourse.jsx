@@ -1,4 +1,4 @@
-import { useParams,useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 
 
@@ -113,7 +113,7 @@ function ManageCourse() {
   const [course, setCourse] = useState(null);
   const [lectures, setLectures] = useState([]);;
 
-  const navigate=useNavigate();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -125,8 +125,6 @@ function ManageCourse() {
         });
 
         const data = res.data;
-
-       
 
         if (data.course) {
           setCourse(data.course);
@@ -149,7 +147,7 @@ function ManageCourse() {
   }
 
 
- 
+
 
   return (
     <div className="min-h-screen bg-[#fbfbfe] px-4 py-5 sm:px-6 lg:px-8">
@@ -158,11 +156,14 @@ function ManageCourse() {
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-start">
           <div className="pt-1">
             <div className="mb-3 flex items-center gap-4">
-              <span className="rounded-full bg-[#DDF7E8] px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-[#6DB68A]">
-                Published
-              </span>
-              <span className="text-[24px] font-medium tracking-[-0.02em] text-[#8D98B3]">
-
+              <span
+                className={`rounded-full px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em]
+                ${course?.status === "published"
+                    ? "bg-[#DDF7E8] text-[#6DB68A]"
+                    : "bg-[#FFF4D8] text-[#D79A00]"
+                  }`}
+              >
+                {course?.status || "Draft"}
               </span>
             </div>
 
@@ -181,12 +182,15 @@ function ManageCourse() {
               >
                 Edit Course
               </button>
-              <button
-                type="button"
-                className="rounded-full bg-[#4F35F4] px-5 py-2 text-sm font-semibold tracking-[-0.03em] text-white shadow-[0_10px_24px_rgba(79,53,244,0.24)] transition-all duration-200 hover:scale-105 hover:shadow-md"
-              >
-                Publish Course
-              </button>
+
+              {course?.status !== "published" && (
+                <button
+                  type="button"
+                  className="rounded-full bg-[#4F35F4] px-5 py-2 text-sm font-semibold tracking-[-0.03em] text-white shadow-[0_10px_24px_rgba(79,53,244,0.24)] transition-all duration-200 hover:scale-105 hover:shadow-md"
+                >
+                  Publish Course
+                </button>
+              )}
             </div>
           </div>
 
@@ -204,13 +208,13 @@ function ManageCourse() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(255,255,255,0.14),transparent_38%),linear-gradient(180deg,rgba(9,58,63,0.12),rgba(8,39,44,0.16))]" />
 
               {/* TEXT */}
-              <div className="absolute right-5 top-3 text-[24px] font-semibold uppercase tracking-[0.08em] text-white/80">
+              {/* <div className="absolute right-5 top-3 text-[24px] font-semibold uppercase tracking-[0.08em] text-white/80">
                 Course
-              </div>
+              </div> */}
 
-              <div className="absolute left-4 top-[114px] rounded-full bg-white/95 px-4 py-1.5 text-[10px] font-semibold text-[#6557EF] shadow-sm">
+              {/* <div className="absolute left-4 top-[114px] rounded-full bg-white/95 px-4 py-1.5 text-[10px] font-semibold text-[#6557EF] shadow-sm">
                 Preview Thumbnail
-              </div>
+              </div> */}
 
             </div>
           </div>
@@ -277,7 +281,7 @@ function ManageCourse() {
 
               <button
                 type="button"
-                onClick={()=>navigate(`/dashboard/educator/add-lecture/${courseId}`)}
+                onClick={() => navigate(`/dashboard/educator/add-lecture/${courseId}`)}
                 className="inline-flex items-center gap-2 text-[22px] font-semibold tracking-[-0.03em] text-[#5A48F2] transition-all duration-200 ease-out hover:shadow-[0_14px_32px_rgba(17,24,39,0.08)] hover:scale-[1.03]"
               >
                 {/* <PlusCircleIcon /> */}
@@ -321,18 +325,19 @@ function ManageCourse() {
                       type="button"
                       className="flex items-center items-center justify-center rounded-xl text-[#5C667E] transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:shadow-md active:scale-95"
                       aria-label={`Preview ${lecture.title}`}
-                      >
-                      
+                    >
+
                       <EyeIcon />
                     </button>
                     <button
                       type="button"
                       className={`flex items-center items-center justify-center rounded-xl ${lecture.editColor} transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:shadow-md active:scale-95`}
                       aria-label={`Edit ${lecture.title}`}
-                      
-                      onClick={()=>{
-                        
-                        navigate(`/dashboard/educator/edit-lecture/${lecture._id}`)}}
+
+                      onClick={() => {
+
+                        navigate(`/dashboard/educator/edit-lecture/${lecture._id}`)
+                      }}
                     >
                       <PencilIcon />
                     </button>

@@ -1,4 +1,4 @@
-import { useParams,useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import EditLectureHeader from "../../components/lecture/EditLectureHeader";
@@ -21,10 +21,15 @@ function EditLecturePage() {
     description: "",
     duration: "",
     order: "",
-    video: {},
-    thumbnail: {},
+
+    video: null,
+    thumbnail: null,
+
+    videoPreview: "",
+    thumbnailPreview: "",
+
     materials: [],
-    practice: [],
+    practiceSheet: null,
     status: "draft",
     isPreview: false
   });
@@ -33,8 +38,35 @@ function EditLecturePage() {
     async function fetchLecture() {
       try {
         const res = await api.get(`/course/lecture/${lectureId}`);
-        console.log(res.data.lecture);
-        setFormData(res.data.lecture);
+        
+        const lecture = res.data.lecture;
+        console.log("Backend materials:", lecture.materials);
+        setFormData({
+          title: lecture.title || "",
+          description: lecture.description || "",
+          duration: lecture.duration || "",
+          order: lecture.order || "",
+
+          // These should remain empty until the user selects a new file
+          video: null,
+          thumbnail: null,
+
+          // Existing media URLs for preview
+          videoPreview: lecture.video?.url || "",
+          thumbnailPreview: lecture.thumbnail?.url || "",
+
+          materials: (lecture.materials || []).map(material => ({
+            _id: material._id,
+            title: material.title,
+            url: material.url,
+            public_id: material.public_id,
+            status: "existing"
+          })),
+         practiceSheet: lecture.practiceSheet || null,
+
+          status: lecture.status || "draft",
+          isPreview: lecture.isPreview || false,
+        });
       } catch (error) {
         console.error(error);
       } finally {
@@ -52,22 +84,22 @@ function EditLecturePage() {
   return (
     <div className="min-h-full bg-[#f7f7fb] pb-2">
       <div className="mx-auto max-w-[1220px]">
-        <EditLectureHeader formData={formData}/>
+        <EditLectureHeader formData={formData} />
         <EditLectureTabs />
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
           <main className="space-y-6">
-            <LectureBasicsSection 
+            <LectureBasicsSection
               formData={formData}
-              setFormData={setFormData}/>
+              setFormData={setFormData} />
 
-            <LectureMediaSection 
-             formData={formData}
-             setFormData={setFormData}/>
-
-            <LectureMaterialsSection 
+            <LectureMediaSection
               formData={formData}
-              setFormData={setFormData}/>
+              setFormData={setFormData} />
+
+            <LectureMaterialsSection
+              formData={formData}
+              setFormData={setFormData} />
 
             <LecturePracticeSection
               formData={formData}
@@ -76,15 +108,15 @@ function EditLecturePage() {
           </main>
 
           <aside>
-            <RightSidebarPanels 
-            formData={formData} 
-            setFormData={setFormData}/>
+            <RightSidebarPanels
+              formData={formData}
+              setFormData={setFormData} />
           </aside>
         </div>
 
-        <EditLectureFooterBar 
+        <EditLectureFooterBar
           formData={formData}
-          lectureId={lectureId}/>
+          lectureId={lectureId} />
 
       </div>
     </div>

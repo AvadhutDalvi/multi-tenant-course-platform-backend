@@ -6,9 +6,12 @@ const { authMiddleware, roleMiddleware,requireCourseOwner,requireLectureOwner,re
 const cloudinary = require("../cloudinary");
 const { uploadLectureFiles } = require("../middleware/upload");
 const { uploadLectureToCloudinary } = require("../utils/cloudinaryUploadLecture")
+const { updateLectureToCloudinary } = require("../utils/cloudinaryUpdateLecture")
 const { uploadCourseImage } = require("../middleware/upload.js");
 const { uploadToCloudinary } = require("../utils/cloudinaryUpload.js");
 const { createLecture } = require("../utils/CreateLecture.js");
+const { updateLecture } = require("../utils/UpdateLecture.js");
+const { publishLecture } = require("../utils/publishLecture.js");
 
 
 // Consolidated LMS data for a course
@@ -22,7 +25,7 @@ async function learnCourse(req, res) {
         }
 
         // 1️⃣ Verify enrollment via progress document
-        const progress = req.progess;
+        const progress = req.progress;
 
         // 2️⃣ Fetch course
         const courseDoc = await coursemodel.findById(courseId).lean();
@@ -219,52 +222,22 @@ CourseRouter.post(
 
 // update lecture (educator only, course + lecture ownership validated)
 CourseRouter.put(
-    "/:courseId/lecture/:lectureId",
+    "/lecture-update/:lectureId",
     authMiddleware,
     roleMiddleware("educator"),
-    requireCourseOwner,
-    async function (req, res) {
-        try {
-            const { courseId, lectureId } = req.params;
-            const { title, videoUrl } = req.body;
-
-            if (!mongoose.Types.ObjectId.isValid(courseId) || !mongoose.Types.ObjectId.isValid(lectureId)) {
-                return res.status(400).json({ message: "Invalid course or lecture ID" });
-            }
-
-            const course = req.course;
-            const channel = req.channel;
-
-            const lecture = await lecturemodel.findOne({
-                _id: lectureId,
-                course: courseId
-            });
-            if (!lecture) {
-                return res.status(404).json({ message: "Lecture not found" });
-            }
-
-            if (title !== undefined) {
-                if (typeof title !== "string" || !title.trim()) {
-                    return res.status(400).json({ message: "Lecture title is required" });
-                }
-                lecture.title = title.trim();
-            }
-            if (videoUrl !== undefined && typeof videoUrl === "string") {
-                lecture.videoUrl = videoUrl.trim() || lecture.videoUrl;
-            }
-
-            await lecture.save();
-
-            const lectures = await lecturemodel
-                .find({ course: courseId })
-                .sort({ createdAt: 1 })
-                .lean();
-
-            res.json({ message: "Lecture updated", lectures });
-        } catch (error) {
-            res.status(500).json({ message: error.message || "Failed to update lecture" });
-        }
-    }
+    requireLectureOwner,
+    uploadLectureFiles,
+    updateLectureToCloudinary,
+    updateLecture
+);
+      
+//publish Lecture
+CourseRouter.patch(
+    "/lecture/:lectureId/publish",
+    authMiddleware,
+    roleMiddleware("educator"),
+    requireLectureOwner,
+    publishLecture
 );
 
 // delete lecture (educator only, course + lecture ownership validated)

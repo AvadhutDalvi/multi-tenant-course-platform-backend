@@ -9,6 +9,40 @@ function EditLectureFooterBar({
 
   async function handleSave() {
     try {
+
+      const existingMaterials = [];
+      const newMaterials = [];
+      const deletedMaterialIds = [];
+
+      (formData.materials || []).forEach((material) => {
+
+        if (material.status === "existing") {
+          existingMaterials.push({
+            _id: material._id,
+            title: material.title,
+          });
+        }
+
+        else if (material.status === "new") {
+          newMaterials.push({
+            tempId: material.tempId,
+            title: material.title,
+            url: material.url || "",
+          });
+        }
+
+        else if (material.status === "deleted" && material._id) {
+          deletedMaterialIds.push(material._id);
+        }
+
+        // New materials marked as deleted are ignored
+      });
+
+      // Uncomment while testing
+      // console.log(existingMaterials);
+      // console.log(newMaterials);
+      // console.log(deletedMaterialIds);
+
       const formDataToSend = new FormData();
 
       formDataToSend.append("title", formData.title || "");
@@ -19,32 +53,58 @@ function EditLectureFooterBar({
       formDataToSend.append("isPreview", formData.isPreview || false);
       formDataToSend.append("releaseDate", formData.releaseDate || "");
 
+      // ✅ New Material Payload
       formDataToSend.append(
-        "materials",
-        JSON.stringify(formData.materials || [])
+        "existingMaterials",
+        JSON.stringify(existingMaterials)
       );
 
       formDataToSend.append(
-        "practice",
-        JSON.stringify(formData.practice || [])
+        "newMaterials",
+        JSON.stringify(newMaterials)
       );
 
-      if (formData.videoFile) {
+      formDataToSend.append(
+        "deletedMaterialIds",
+        JSON.stringify(deletedMaterialIds)
+      );
+
+      // ✅ Upload material files
+      (formData.materials || []).forEach((material) => {
+        if (material.status === "new" && material.file) {
+          formDataToSend.append(
+            "materials",
+            material.file
+          );
+        }
+      });
+
+      // Existing Practice Flow (unchanged)
+      if (formData.practiceSheet?.file) {
+        formDataToSend.append(
+          "practiceSheet",
+          formData.practiceSheet.file
+        );
+      }
+
+      // Existing Video Flow (unchanged)
+      if (formData.video) {
         formDataToSend.append(
           "video",
-          formData.videoFile
+          formData.video
         );
       }
 
-      if (formData.thumbnailFile) {
+      // Existing Thumbnail Flow (unchanged)
+      if (formData.thumbnail) {
         formDataToSend.append(
           "thumbnail",
-          formData.thumbnailFile
+          formData.thumbnail
         );
       }
 
-      await api.patch(
-        `/lecture/${lectureId}`,
+      await api.put(
+        `/course/lecture-update/${lectureId}`,
         formDataToSend
       );
 
@@ -55,25 +115,23 @@ function EditLectureFooterBar({
       alert("Failed to update lecture");
     }
   }
-
+  
   async function handlePublish() {
     try {
-      const formDataToSend = new FormData();
 
-      formDataToSend.append("status", "published");
+        await api.patch(
+            `/course/lecture/${lectureId}/publish`
+        );
 
-      await api.patch(
-        `/lecture/${lectureId}`,
-        formDataToSend
-      );
-
-      alert("Lecture published");
+        alert("Lecture published");
 
     } catch (error) {
-      console.error(error);
-      alert("Publish failed");
+
+        console.error(error);
+        alert("Publish failed");
+
     }
-  }
+}
 
   function handleCancel() {
     navigate(-1);

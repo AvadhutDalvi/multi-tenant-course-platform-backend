@@ -4,13 +4,18 @@ import path from "path";
 import os from "os";
 
 export async function uploadLectureToCloudinary(req, res, next) {
-    let tempVideoPath = null;
-    let tempThumbPath = null;
+
+
 
     try {
         const videoFiles = req.files?.video;
         const thumbnailFiles = req.files?.thumbnail;
         const videoUrl = req.body.videoUrl;
+        const thumbnailUrl = req.body.thumbnailUrl;
+        const practiceSheetTitle = req.body.practiceSheetTitle;
+
+        // 🔥 VIDEO (HANDLE FILE OR URL)
+        let videoData = null;
 
         if ((!videoFiles || !videoFiles[0]) && !videoUrl) {
             return res.status(400).json({
@@ -18,28 +23,34 @@ export async function uploadLectureToCloudinary(req, res, next) {
             });
         }
 
-
-        // 🔥 VIDEO (HANDLE FILE OR URL)
-        let videoData = null;
-
         if (videoFiles && videoFiles[0]) {
-            const videoFile = videoFiles[0];
+            let tempPath = null;
 
-            tempVideoPath = path.join(os.tmpdir(), `video-${Date.now()}`);
-            await fs.writeFile(tempVideoPath, videoFile.buffer);
+            try {
+                const videoFile = videoFiles[0];
 
-            const videoResult = await cloudinary.uploader.upload(tempVideoPath, {
-                resource_type: "video",
-                folder: "lectures/videos",
-            });
 
-            await fs.unlink(tempVideoPath).catch(() => { });
-            tempVideoPath = null;
+                tempPath = path.join(os.tmpdir(), `video-${Date.now()}`);
+                await fs.writeFile(tempPath, videoFile.buffer);
 
-            videoData = {
-                url: videoResult.secure_url,
-                public_id: videoResult.public_id,
-            };
+                const videoResult = await cloudinary.uploader.upload(tempPath, {
+                    resource_type: "video",
+                    folder: "lectures/videos",
+                });
+
+
+
+                videoData = {
+                    url: videoResult.secure_url,
+                    public_id: videoResult.public_id,
+                };
+            }
+            finally {
+
+                if (tempPath) {
+                    await fs.unlink(tempPath).catch(() => { });
+                }
+            }
 
         } else if (videoUrl) {
             // 🔥 URL CASE
@@ -49,27 +60,37 @@ export async function uploadLectureToCloudinary(req, res, next) {
             };
         }
 
+
+
         // 🔥 THUMBNAIL
-        const thumbnailUrl = req.body.thumbnailUrl;
         let thumbnailData = null;
 
         if (thumbnailFiles?.[0]) {
-            const thumbFile = thumbnailFiles[0];
-            tempThumbPath = path.join(os.tmpdir(), `thumb-${Date.now()}`);
-            await fs.writeFile(tempThumbPath, thumbFile.buffer);
+            let tempPath = null;
 
-            const thumbResult = await cloudinary.uploader.upload(tempThumbPath, {
-                resource_type: "image",
-                folder: "lectures/thumbnails",
-            });
+            try {
+                const thumbFile = thumbnailFiles[0];
+                tempPath = path.join(os.tmpdir(), `thumb-${Date.now()}`);
+                await fs.writeFile(tempPath, thumbFile.buffer);
 
-            await fs.unlink(tempThumbPath).catch(() => { });
-            tempThumbPath = null;
+                const thumbResult = await cloudinary.uploader.upload(tempPath, {
+                    resource_type: "image",
+                    folder: "lectures/thumbnails",
+                });
 
-            thumbnailData = {
-                url: thumbResult.secure_url,
-                public_id: thumbResult.public_id,
-            };
+
+
+                thumbnailData = {
+                    url: thumbResult.secure_url,
+                    public_id: thumbResult.public_id,
+                };
+            }
+            finally {
+
+                if (tempPath) {
+                    await fs.unlink(tempPath).catch(() => { });
+                }
+            }
 
         } else if (thumbnailUrl) {
             thumbnailData = {
@@ -78,44 +99,91 @@ export async function uploadLectureToCloudinary(req, res, next) {
             };
         }
 
+
+
         // 🔥 MATERIALS
         const materials = [];
+
+        // 🔥 MATERIALS METADATA
+        const materialsMeta=null;
+
+        try {
+
+             materialsMeta = JSON.parse(req.body.materialsMeta || "[]");
+
+        } catch {
+
+            const error = new Error(
+                "Invalid materials metadata."
+            );
+
+            error.statusCode = 400;
+
+            throw error;
+        }
+
         if (req.files?.materials) {
-            for (let file of req.files.materials) {
-                const tempPath = path.join(os.tmpdir(), `mat-${Date.now()}`);
-                await fs.writeFile(tempPath, file.buffer);
+            for (const [index, file] of req.files.materials.entries()) {
+                let tempPath = null;
 
-                const result = await cloudinary.uploader.upload(tempPath, {
-                    folder: "lectures/materials",
-                });
+                try {
+                    tempPath = path.join(os.tmpdir(), `mat-${Date.now()}`);
+                    await fs.writeFile(tempPath, file.buffer);
 
-                await fs.unlink(tempPath).catch(() => { });
+                    const result = await cloudinary.uploader.upload(tempPath, {
+                        folder: "lectures/materials",
+                    });
 
-                materials.push({
-                    title: file.originalname,
-                    url: result.secure_url,
-                });
+
+
+                    materials.push({
+                        title: materialsMeta[index]?.title || file.originalname,
+                        url: result.secure_url,
+                        public_id: result.public_id,
+                    });
+                }
+                finally {
+
+                    if (tempPath) {
+                        await fs.unlink(tempPath).catch(() => { });
+                    }
+                }
             }
         }
 
+
         // 🔥 PRACTICE SHEET
         let practiceSheet = null;
+
+
         if (req.files?.practiceSheet?.[0]) {
-            const file = req.files.practiceSheet[0];
-            const tempPath = path.join(os.tmpdir(), `ps-${Date.now()}`);
-            await fs.writeFile(tempPath, file.buffer);
+            let tempPath = null;
 
-            const result = await cloudinary.uploader.upload(tempPath, {
-                folder: "lectures/practice",
-            });
+            try {
+                const file = req.files.practiceSheet[0];
+                tempPath = path.join(os.tmpdir(), `ps-${Date.now()}`);
+                await fs.writeFile(tempPath, file.buffer);
 
-            await fs.unlink(tempPath).catch(() => { });
+                const result = await cloudinary.uploader.upload(tempPath, {
+                    folder: "lectures/practice",
+                });
 
-            practiceSheet = {
-                title: file.originalname,
-                url: result.secure_url,
-            };
+
+
+                practiceSheet = {
+                    title: practiceSheetTitle || file.originalname,
+                    url: result.secure_url,
+                    public_id: result.public_id,
+                };
+            }
+            finally {
+
+                if (tempPath) {
+                    await fs.unlink(tempPath).catch(() => { });
+                }
+            }
         }
+
 
         // 🔥 PASS TO NEXT
         req.uploadedFiles = {
@@ -128,8 +196,7 @@ export async function uploadLectureToCloudinary(req, res, next) {
         next();
 
     } catch (err) {
-        if (tempVideoPath) fs.unlink(tempVideoPath).catch(() => { });
-        if (tempThumbPath) fs.unlink(tempThumbPath).catch(() => { });
-        res.status(500).json({ message: err.message });
+
+        return res.status(500).json({ message: err.message });
     }
 }

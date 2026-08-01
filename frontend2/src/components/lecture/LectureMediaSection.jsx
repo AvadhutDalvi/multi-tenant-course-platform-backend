@@ -16,7 +16,8 @@ function LectureMediaSection({ formData, setFormData }) {
 
     setFormData((current) => ({
       ...current,
-      videoFile: file
+      video: file,
+      videoPreview: URL.createObjectURL(file)
     }));
   }
 
@@ -27,7 +28,8 @@ function LectureMediaSection({ formData, setFormData }) {
 
     setFormData((current) => ({
       ...current,
-      thumbnailFile: file
+      thumbnail: file,
+      thumbnailPreview: URL.createObjectURL(file)
     }));
   }
 
@@ -51,9 +53,9 @@ function LectureMediaSection({ formData, setFormData }) {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)]">
         <div>
           <div className="relative min-h-[280px] overflow-hidden rounded-[28px] bg-[linear-gradient(135deg,#0f172a,#312e81_55%,#4f46e5)] shadow-lg shadow-slate-200">
-            {formData?.video?.url && (
+            {formData.videoPreview && (
               <video
-                src={formData.video.url}
+                src={formData.videoPreview}
                 className="absolute inset-0 h-full w-full object-cover"
               />
             )}
@@ -92,24 +94,24 @@ function LectureMediaSection({ formData, setFormData }) {
           </label>
 
           {/* Upload Status */}
-          {formData.videoFile && (
+          {formData.video && (
             <p className="mt-3 text-sm font-medium text-emerald-600">
-              Selected: {formData.videoFile.name}
+              Selected: {formData.video.name}
             </p>
           )}
         </div>
 
-         {/* RIGHT SIDE THUMBNAIL */}
+        {/* RIGHT SIDE THUMBNAIL */}
         <div>
           <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
             Thumbnail Preview
           </p>
 
           <div className="relative min-h-[220px] overflow-hidden rounded-[26px] border border-slate-100 bg-slate-50 shadow-sm">
-            
-            {formData?.thumbnail?.url ? (
+
+            {formData.thumbnailPreview ? (
               <img
-                src={formData.thumbnail.url}
+                src={formData.thumbnailPreview}
                 alt="Lecture Thumbnail"
                 className="h-full w-full object-cover"
               />
@@ -142,13 +144,13 @@ function LectureMediaSection({ formData, setFormData }) {
             />
           </label>
 
-          {formData.thumbnailFile && (
+          {formData.thumbnail && (
             <p className="mt-3 text-sm font-medium text-emerald-600">
-              Selected: {formData.thumbnailFile.name}
+              Selected: {formData.thumbnail.name}
             </p>
           )}
         </div>
-        
+
       </div>
     </section>
   );

@@ -1,6 +1,7 @@
- const { coursemodel, channelmodel, lecturemodel } = require("../db");
- 
- async function createLecture(req, res){
+const { coursemodel, channelmodel, lecturemodel } = require("../db");
+const { deleteCloudinaryAssets } = require("../utils/deleteCloudinaryAssets");
+
+async function createLecture(req, res) {
   try {
     const { courseId } = req.params;
 
@@ -30,19 +31,9 @@
     let lectureOrder = Number(order);
 
     // 🔥 2. VERIFY COURSE + OWNERSHIP
-    const course = await coursemodel.findById(courseId);
-    if (!course) {
-      return res.status(404).json({
-        message: "Course not found"
-      });
-    }
+    const course = req.course;
 
-    const channel = await channelmodel.findById(course.channel);
-    if (!channel || channel.owner.toString() !== req.user.id) {
-      return res.status(403).json({
-        message: "You cannot add lecture to this course"
-      });
-    }
+    const channel = req.channel;
 
     // 🔥 3. GET UPLOADED FILES FROM MIDDLEWARE
     const {
@@ -101,6 +92,21 @@
     });
 
   } catch (error) {
+
+    //rollback the cloudinary files
+    try {
+
+      await deleteCloudinaryAssets(req.uploadedFiles);
+
+    } catch (rollbackError) {
+
+      console.error(
+        "Rollback failed:",
+        rollbackError
+      );
+
+    }
+
     console.error("createLecture:", error);
 
     return res.status(500).json({

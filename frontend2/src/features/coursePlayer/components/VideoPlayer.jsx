@@ -41,7 +41,7 @@ function VideoPlayer({ lecture }) {
 
         <video
           ref={videoRef}
-          src={lecture.videoUrl}
+          src={lecture.video.url}
           className="w-full h-full object-contain"
           controls={isPlaying}
         />

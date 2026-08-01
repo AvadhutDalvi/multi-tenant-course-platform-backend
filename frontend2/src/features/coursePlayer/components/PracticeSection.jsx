@@ -3,78 +3,63 @@ function getFileType(url = "") {
 
   if (["pdf"].includes(ext)) return "PDF";
   if (["zip", "rar"].includes(ext)) return "ZIP";
-  if (["mp4"].includes(ext)) return "VIDEO";
+  if (["doc", "docx"].includes(ext)) return "DOC";
+  if (["xlsx", "xls"].includes(ext)) return "XLS";
+  if (["ppt", "pptx"].includes(ext)) return "PPT";
 
   return "FILE";
 }
 
-function getFileSize(size) {
-  if (!size) return "";
+function PracticeSection({ practiceSheet }) {
 
-  if (size < 1024) return size + " B";
-  if (size < 1024 * 1024) return (size / 1024).toFixed(1) + " KB";
-
-  return (size / (1024 * 1024)).toFixed(1) + " MB";
-}
-
-function MaterialsSection({ materials }) {
-  if (!materials || materials.length === 0) {
+  if (!practiceSheet) {
     return (
       <p className="text-sm text-slate-400">
-        No resources available.
+        No practice sheet available.
       </p>
     );
   }
+
+  const fileType = getFileType(practiceSheet.url);
 
   return (
     <div className="space-y-6">
 
       {/* HEADER */}
       <h2 className="text-lg font-semibold text-slate-800">
-        Resources
+        Practice Sheet
       </h2>
 
-      {/* GRID */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* CARD */}
+      <a
+        href={practiceSheet.url}
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm"
+      >
 
-        {materials.map((item, index) => {
-          const fileType = getFileType(item.url);
+        {/* FILE TYPE */}
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-sm font-semibold text-emerald-600">
+          {fileType}
+        </div>
 
-          return (
-            <a
-              key={index}
-              href={item.url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-4 bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm hover:border-slate-300 transition"
-            >
+        {/* INFO */}
+        <div className="flex-1">
 
-              {/* ICON */}
-              <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 text-sm font-semibold">
-                {fileType}
-              </div>
+          <p className="truncate text-sm font-medium text-slate-800">
+            {practiceSheet.title || "Practice Sheet"}
+          </p>
 
-              {/* INFO */}
-              <div className="flex-1">
+          <p className="text-xs text-slate-400">
+            Download and solve before the next lecture.
+          </p>
 
-                <p className="text-sm font-medium text-slate-800 truncate">
-                  {item.title || "Resource File"}
-                </p>
+        </div>
 
-                <p className="text-xs text-slate-400">
-                  {getFileSize(item.size) || "File"}
-                </p>
-
-              </div>
-
-            </a>
-          );
-        })}
-
-      </div>
+      </a>
 
     </div>
   );
 }
 
-export default MaterialsSection;
+export default PracticeSection;

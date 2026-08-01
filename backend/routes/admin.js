@@ -6,8 +6,10 @@ const { authMiddleware, roleMiddleware } = require("../middleware/auth.js")
 const { z } = require("zod");
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken");
-const admin_jwt_pass = "user@321"
 
+
+user_jwt_pass=process.env.user_jwt_pass;
+admin_jwt_pass=process.env.admin_jwt_pass;
 
 adminRouter.post("/signup", async function (req, res) {
 

@@ -22,7 +22,24 @@ const upload = multer({
       return cb(new Error("Invalid image type."));
     }
 
-    cb(null, true);
+    // 📄 DOCUMENTS (Materials & Practice Sheet)
+    if (["materials", "practiceSheet"].includes(field)) {
+      const allowed = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+      ];
+
+      if (allowed.includes(file.mimetype)) {
+        return cb(null, true);
+      }
+
+      return cb(new Error("Invalid document type."));
+    }
+
+    // ❌ Unknown field
+    return cb(new Error(`Unexpected upload field: ${field}`));
+    //cb(null, true);
   },
 });
 
@@ -31,8 +48,17 @@ const upload = multer({
 const uploadLectureFiles = upload.fields([
   { name: "video", maxCount: 1 },
   { name: "thumbnail", maxCount: 1 },
+  { name: "materials", maxCount: 10 },
+  { name: "practiceSheet", maxCount: 1 },
 ]);
 
+//lecture update
+const updateLectureFiles = upload.fields([
+    { name: "video", maxCount: 1 },
+    { name: "thumbnail", maxCount: 1 },
+    { name: "materials", maxCount: 10 },
+    { name: "practiceSheet", maxCount: 1 },
+]);
 
 //  Course upload
 const uploadCourseImage = upload.single("image");
@@ -44,8 +70,11 @@ const uploadChannelImages = upload.fields([
   { name: "banner", maxCount: 1 },
 ]);
 
+
+
 module.exports = {
   uploadLectureFiles,
   uploadCourseImage,
   uploadChannelImages,
+  updateLectureFiles
 };

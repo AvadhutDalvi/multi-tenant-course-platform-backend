@@ -119,14 +119,14 @@ const purchaseschema = new Schema({
 
 const lectureschema = new Schema({
     title: { type: String, required: true },
-    
+
     description: { type: String },
 
     status: {
-    type: String,
-    enum: ["draft", "review", "published"],
-    default: "draft",
-   },
+        type: String,
+        enum: ["draft", "review", "published"],
+        default: "draft",
+    },
 
     module: {
         type: String,
@@ -143,23 +143,55 @@ const lectureschema = new Schema({
     },
 
     video: {
-        url: String,
-        public_id: String
+         url: {
+            type: String,
+            required: true
+        },
+        public_id: {
+            type: String,
+            required: true
+        }
     },
 
     thumbnail: {
-        url: String,
-        public_id: String
+         url: {
+            type: String,
+            
+        },
+        public_id: {
+            type: String,
+            
+        }
     },
 
     materials: [{
-        title: String,
-        url: String
+        title: {
+            type: String,
+            
+        },
+        url: {
+            type: String,
+            
+        },
+        public_id: {
+            type: String,
+            
+        }
     }],
 
     practiceSheet: {
-        title: String,
-        url: String
+        title: {
+            type: String,
+            
+        },
+        url: {
+            type: String,
+           
+        },
+        public_id: {
+            type: String,
+           
+        }
     },
 
     course: {

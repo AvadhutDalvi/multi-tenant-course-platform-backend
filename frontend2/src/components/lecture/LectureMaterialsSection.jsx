@@ -1,7 +1,11 @@
 
 function LectureMaterialsSection({ formData, setFormData }) {
 
+  
   const materials = formData.materials || [];
+  const visibleMaterials = materials.filter(
+    (item) => item.status !== "deleted"
+  );
 
   function handleFileUpload(event) {
     const file = event.target.files[0];
@@ -9,16 +13,18 @@ function LectureMaterialsSection({ formData, setFormData }) {
     if (!file) return;
 
     const newMaterial = {
+      tempId: crypto.randomUUID(),
       title: file.name,
-      type: "PDF",
       file: file,
-      tone: "bg-rose-50 text-rose-600"
+      status: "new",
     };
 
     setFormData((current) => ({
       ...current,
       materials: [...(current.materials || []), newMaterial]
     }));
+
+    event.target.value = "";
   }
 
   function handleAddLink() {
@@ -27,10 +33,10 @@ function LectureMaterialsSection({ formData, setFormData }) {
     if (!url) return;
 
     const newMaterial = {
+      tempId: crypto.randomUUID(),
       title: url,
-      type: "Link",
       url: url,
-      tone: "bg-indigo-50 text-indigo-600"
+      status: "new",
     };
 
     setFormData((current) => ({
@@ -39,13 +45,14 @@ function LectureMaterialsSection({ formData, setFormData }) {
     }));
   }
 
-  function handleRemove(index) {
-    const updated = [...materials];
-    updated.splice(index, 1);
-
+  function handleRemove(materialId) {
     setFormData((current) => ({
       ...current,
-      materials: updated
+      materials: current.materials.map((material) =>
+        (material._id || material.tempId) === materialId
+          ? { ...material, status: "deleted" }
+          : material
+      ),
     }));
   }
 
@@ -62,7 +69,7 @@ function LectureMaterialsSection({ formData, setFormData }) {
         </div>
 
         <div className="flex flex-wrap gap-3">
-           <label className="cursor-pointer rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-100 transition hover:bg-indigo-500">
+          <label className="cursor-pointer rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-100 transition hover:bg-indigo-500">
             Upload File
 
             <input
@@ -71,7 +78,7 @@ function LectureMaterialsSection({ formData, setFormData }) {
               onChange={handleFileUpload}
             />
           </label>
-         <button
+          <button
             type="button"
             onClick={handleAddLink}
             className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600"
@@ -81,47 +88,49 @@ function LectureMaterialsSection({ formData, setFormData }) {
         </div>
       </div>
 
-     <div className="space-y-3">
-        {materials.length === 0 && (
+      <div className="space-y-3">
+        {visibleMaterials.length === 0 && (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-sm font-medium text-slate-400">
             No materials added yet
           </div>
         )}
 
-        {materials.map((item, index) => (
-          <article
-            key={index}
-            className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 transition hover:border-indigo-100 hover:bg-white hover:shadow-sm"
-          >
-            <div className="flex min-w-0 items-center gap-4">
-              <span
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xs font-bold ${
-                  item.tone || "bg-indigo-50 text-indigo-600"
-                }`}
+        {visibleMaterials
+          .map((item) => {
+            const isLink = !!item.url && !item.file;
+            const badge = isLink ? "LINK" : "FILE";
+
+            return (
+              <article
+                key={item._id || item.tempId}
+                className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 transition hover:border-indigo-100 hover:bg-white hover:shadow-sm"
               >
-                {item.type}
-              </span>
+                <div className="flex min-w-0 items-center gap-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-xs font-bold text-indigo-600">
+                    {badge}
+                  </span>
 
-              <div className="min-w-0">
-                <h3 className="truncate text-base font-semibold text-slate-900">
-                  {item.title}
-                </h3>
+                  <div className="min-w-0">
+                    <h3 className="truncate text-base font-semibold text-slate-900">
+                      {item.title}
+                    </h3>
 
-                <p className="mt-1 text-sm font-medium text-slate-400">
-                  Added to lecture resources
-                </p>
-              </div>
-            </div>
+                    <p className="mt-1 text-sm font-medium text-slate-400">
+                      Added to lecture resources
+                    </p>
+                  </div>
+                </div>
 
-            <button
-              type="button"
-              onClick={() => handleRemove(index)}
-              className="rounded-full px-3 py-2 text-sm font-semibold text-slate-400 transition hover:bg-slate-100 hover:text-rose-600"
-            >
-              Remove
-            </button>
-          </article>
-        ))}
+                <button
+                  type="button"
+                  onClick={() => handleRemove(item._id || item.tempId)}
+                  className="rounded-full px-3 py-2 text-sm font-semibold text-slate-400 transition hover:bg-slate-100 hover:text-rose-600"
+                >
+                  Remove
+                </button>
+              </article>
+            );
+          })}
       </div>
     </section>
   );
